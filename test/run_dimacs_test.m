@@ -23,7 +23,9 @@ objval = struct(...
     'sched_100_50_scaled', 67.166281, ...   % their table is wrong or something
     'sched_100_100_scaled', 27.331457, ...
     'sched_200_100_scaled', 51.812471 ...
-);
+    );
+
+solvesedumi = 0;
 
 k=1;
 testnr = 1:length(tests)
@@ -57,7 +59,8 @@ for i = testnr
     dims = K;
     
     % solve dual with ecos
-    [y_d, s_d, info_dd, z_d, x_d] = ecos(c_ecos, G_ecos, h_ecos, dims);
+    ecosopts = ecosoptimset('reltol',1e-6,'abstol',1e-6,'feastol',1e-6,'maxit',200);
+    [y_d, s_d, info_dd, z_d, x_d] = ecos(c_ecos, G_ecos, h_ecos, dims, ecosopts);
     ecos_fval_d = -info_dd.pcost;
     relerr_d = abs((ecos_fval_d - objval.(test_name))/objval.(test_name));
     err_d.(test_name) = relerr_d;
@@ -89,7 +92,7 @@ for i = testnr
     pars.eps = 1e-6;
     pars.bigeps = 1e-6/10;
     pars.errors = 1;
-    if( 0 )
+    if( solvesedumi )
         [x_s,y_s,info_ss] = sedumi(At',b,c,K,pars);
         sedumi_fval = c'*x_s;
         relerr_s = abs((sedumi_fval - objval.(test_name))/objval.(test_name));
@@ -103,10 +106,10 @@ for i = testnr
         derr = dimacs_errors(At',b,c,K,x_s,y_s);
         pres_s.(test_name) = derr(1);
         dres_s.(test_name) = derr(2);
-%         for j = 1:length(K.q)
-%             coneidx = K.f + K.l + (1:K.q(j));
-%             dres_s.(test_name) = max([dres_s.(test_name), norm(ineqres(coneidx(1)) - norm(ineqres(coneidx(2:end)),2),inf)]);
-%         end
+        %         for j = 1:length(K.q)
+        %             coneidx = K.f + K.l + (1:K.q(j));
+        %             dres_s.(test_name) = max([dres_s.(test_name), norm(ineqres(coneidx(1)) - norm(ineqres(coneidx(2:end)),2),inf)]);
+        %         end
         if( info_ss.numerr == 0 )
             statstr_s.(test_name) = 'OK';
         else
@@ -145,20 +148,34 @@ end
 %% print summary in tex format
 disp('DIMACS SUMMARY:');
 % fprintf('Primal formulation solved %d / %d problems\n', sum(success_p), length(success_p));
-fprintf('  Dual formulation solved %d / %d problems\n\n', sum(success_d), length(success_d));
+fprintf('  ECOS dual formulation solved %d / %d problems\n\n', sum(success_d), length(success_d));
 
-for i = testnr
-    test_name = tests(i).name;
-    test_name = test_name(1:end-4);
-    fprintf('%d & %s & %d & %d & %s & %s & %4.2e & %4.2e & %4.2e & %4.2e & %3d & %3d & %4.2f & %4.2f \\\\\n',...
-        i, strrep(test_name,'_','\_'), numvar.(test_name), numRows.(test_name), ...
-        statstr_s.(test_name), statstr_d.(test_name), ...
-        err_s.(test_name), err_d.(test_name), ...
-        pres_s.(test_name), pres_d.(test_name), ...
-        iter_s.(test_name), iter_d.(test_name),...
-        time_s.(test_name), time_d.(test_name) );
+if( solvesedumi )
+    for i = testnr
+        test_name = tests(i).name;
+        test_name = test_name(1:end-4);
+        fprintf('%d & %s & %d & %d & %s & %s & %4.2e & %4.2e & %4.2e & %4.2e & %3d & %3d & %4.2f & %4.2f \\\\\n',...
+            i, strrep(test_name,'_','\_'), numvar.(test_name), numRows.(test_name), ...
+            statstr_s.(test_name), statstr_d.(test_name), ...
+            err_s.(test_name), err_d.(test_name), ...
+            pres_s.(test_name), pres_d.(test_name), ...
+            iter_s.(test_name), iter_d.(test_name),...
+            time_s.(test_name), time_d.(test_name) );
+    end
+else
+    fprintf('ID &      Testname        & vars  & constr & Status  &  error   &   pres   & iter &   time \n');
+    for i = testnr
+        test_name = tests(i).name;
+        test_name = test_name(1:end-4);        
+        fprintf('%2d & %20s & %5d & %6d & %7s & %4.2e & %4.2e & %4d & %5.2f s \\\\\n',...
+            i, test_name, numvar.(test_name), numRows.(test_name), ...
+            statstr_d.(test_name), ...
+            err_d.(test_name), ...
+            pres_d.(test_name), ...
+            iter_d.(test_name),...
+            time_d.(test_name) );
+    end
 end
-
 
 %% evalaute timings
 k=0;
@@ -168,9 +185,9 @@ for i = testnr
     test_name = tests(i).name;
     test_name = test_name(1:end-4);
     if( strcmp(statstr_d.(test_name),'OK') && strcmp(statstr_s.(test_name),'OK') )
-       totalt_d = totalt_d + time_d.(test_name);
-       totalt_s = totalt_s + time_s.(test_name);
-       k = k+1;
+        totalt_d = totalt_d + time_d.(test_name);
+        totalt_s = totalt_s + time_s.(test_name);
+        k = k+1;
     end
 end
 fprintf('Total time SEDUMI: %4.2f seconds, ECOS: %4.2f seconds (%4.2fx)\n', totalt_s, totalt_d, totalt_s/totalt_d);
