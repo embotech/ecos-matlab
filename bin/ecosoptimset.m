@@ -10,7 +10,7 @@ function opts = ecosoptimset(varargin)
 %
 %    feastol, reltol, abstol, maxit and verbose
 %
-% (c) Alexander Domahid, embotech GmbH, Zurich, Switzerland, 2014.
+% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
 
 
 if( mod(nargin,2) ~= 0)

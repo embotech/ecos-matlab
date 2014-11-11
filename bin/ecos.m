@@ -2,7 +2,8 @@
 %
 % Self-dual homogeneous embedding interior point implementation for optimization
 % over linear or second-order cones. ECOS does not support semi-definite
-% cones.
+% cones (feel free to contact the developers if you wish to add SDP support 
+% to ECOS.
 %
 %   [x,y,info,s,z] = ECOS(c,G,h,dims) Solves a pair of primal and dual
 %   cone programs
@@ -15,43 +16,44 @@
 %        subject to  G'*z + c = 0
 %                    z >= 0.
 %
-%   The inequalities are with respect to a cone C defined as the Cartesian
-%   product of N + 1 cones:
+%   The inequalities are with respect to a cone K defined as the Cartesian
+%   product of N+1 cones:
 % 
-%        C = C_0 x C_1 x .... x C_N x C_{N+1}.
+%        K = K_0 x K_1 x .... x K_N.
 % 
-%     The first cone C_0 is the nonnegative orthant of dimension dims.l.
+%     The first cone, K_0, is the nonnegative orthant of dimension dims.l.
 %     The next N cones are second order cones of dimension dims.q(1), ...,
 %     dims.q(N), where a second order cone of dimension m is defined as
 % 
 %         { (u0, u1) in R x R^{m-1} | u0 >= ||u1||_2 }.
 % 
-%     Input arguments:
+%     INPUT arguments:
 % 
-%         c is a dense matrix of size (n,1) (column vector)
+%         c is a dense column vector of size n
 % 
-%         dims is a struct with the dimensions of the components of C.
+%         dims is a struct with the dimensions of the components of cone K.
 %         It has two fields.
 %         - dims.l, the dimension of the nonnegative orthant C_0, with l>=0.
 %         - dims.q, a row vector of N integers with the dimensions of the 
-%           second order cones C_1, ..., C_N. (N >= 0 and q(1) >= 1.)
+%           second order cones K_1, ..., K_N. (N >= 0 and q(i) >= 3.)
 % 
-%         G is a sparse matrix of size (K,n), where
+%         G is a sparse matrix of size (m,n), where
 % 
-%             K = dims.l + dims.q(1) + ... + dims.q(N).
+%             m = dims.l + dims.q(1) + ... + dims.q(N).
 %               = dims.l + sum(dims.q)
 % 
 %         Each column of G describes a vector
 % 
-%             v = ( v_0, v_1, ..., v_N+1 )
+%             v = ( v_0, v_1, ..., v_N )
 % 
 %         in V = R^dims.l x R^dims.q(1) x ... x R^dims.q(N)
 %         stored as a column vector
 % 
-%             [ v_0; v_1; ...; v_N+1 ].
+%             [ v_0; v_1; ...; v_N ].
 % 
-%         h is a dense matrix of size (K,1), representing a vector in V,
+%         h is a dense column vector of size m, representing a vector in V,
 %         in the same format as the columns of G.
+%         
 %
 %
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,A,b) Solves a pair of primal and 
@@ -75,7 +77,7 @@
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,otps) and 
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,A,b,otps) are as above, with the struct 
 %   opts used to control settings of the solver. The following fields can
-%   be present:
+%   be present (use ECOSOPTIMSET to obtain a default initialization):
 %
 %      .verbose - whether to inform on progess (default: true)
 %      .feastol - stopping tolerance on infeasibilities (default: 1e-5)
@@ -84,14 +86,16 @@
 %      .maxit   - maximum number of iterations (default: 30)
 % 
 %
-% Details on ECOS can be found at github.com/ifa-ethz/ecos and in the paper 
+% Details on ECOS can be found at http://embotech.com/ECOS and in the paper 
 %    Alexander Domahidi, Eric Chu, Stephen Boyd. "ECOS: An Embedded
 %    Conic Solver." In proceedings of European Control Conference (ECC), 
 %    pp. 3071-3076, Zurich, Switzerland, July 2013."
 %
-% COPYING: ECOS is under GPLv3. For commercial licenses and support email 
-% to ecos@embotech.com.
 %
-% (c) Alexander Domahidi, Automatic Control Laboratory, ETH Zurich, 2012-2014.
+% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
 %
-% See also ECOS_LICENSE
+%
+% COPYING: ECOS is under GPLv3. For commercial licenses and professional
+% support send an email to ecos@embotech.com.
+%
+% See also ECOSQP ECOSOPTIMSET ECOS_LICENSE

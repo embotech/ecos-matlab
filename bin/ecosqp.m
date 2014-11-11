@@ -45,8 +45,8 @@ function [X,fval,exitflag,output,lambda,Tsolve,c,G,h,dims,Aeq,beq] = ecosqp(H,f,
 %   || (t - f'*x + 1)/sqrt(2)||_2 <= (t-f'*x-1)/sqrt(2) <==> 1/2*x'*H*x + f'*x <= t,
 %
 % assuming that the Hessian H is positive definite, and therefore admits a
-% Cholesky decomposition H = W'*W. We therefore solve the following problem
-% when calling ECOS:
+% Cholesky decomposition H = W'*W. The following problem is solved when
+% calling ECOS after the rewriting:
 %
 %     minimize    t
 %     subject to  A*x <= b
@@ -56,9 +56,16 @@ function [X,fval,exitflag,output,lambda,Tsolve,c,G,h,dims,Aeq,beq] = ecosqp(H,f,
 %           ||       Wx     ||
 %           || (t-f'*x+1)/sqrt(2) ||_2 <= (t-f'*x-1)/sqrt(2)
 %
-% See also ECOS ECOSOPTIMSET QUADPROG
 %
-% (c) Alexander Domahidi, embotech GmbH, Zurich, Switzerland, 2014.
+% If the Hessian H is positive semi-definite, an eigenvalue decomposition
+% is computed to obtain W=H^(1/2). This might be slow for large matrices,
+% but work well for diagonal Hessians. Eigenvalues which are zero are
+% discarded from the computation of W.
+%
+%
+% See also ECOS ECOSOPTIMSET QUADPROG ECOS_LICENSE
+%
+% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
 
 %% dimension and argument checking
 if( isempty(H) )
