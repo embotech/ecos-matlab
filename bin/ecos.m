@@ -1,3 +1,4 @@
+function [x,y,info,s,z] = ecos(c,G,h,dims,varargin)
 % ECOS - Embedded COnic Solver.
 %
 % Self-dual homogeneous embedding interior point implementation for optimization
@@ -76,7 +77,7 @@
 % 
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,otps) and 
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,A,b,otps) are as above, with the struct 
-%   opts used to control settings of the solver. The following fields can
+%   otps used to control settings of the solver. The following fields can
 %   be present (use ECOSOPTIMSET to obtain a default initialization):
 %
 %      .verbose - whether to inform on progess (default: true)
@@ -99,3 +100,40 @@
 % support send an email to ecos@embotech.com.
 %
 % See also ECOSQP ECOSOPTIMSET ECOS_LICENSE
+
+if (length(varargin) == 1)
+    otps = varargin{1};
+elseif (length(varargin) == 2)
+    A = varargin{1};
+    b = varargin{2};
+elseif (length(varargin) == 3)
+    A = varargin{1};
+    b = varargin{2};
+    otps = varargin{3};
+end
+
+if exist('otps','var')
+    if (isfield(otps, 'bool_vars_idx') && ...
+        (min(otps.bool_vars_idx(:)) < 1 || max(otps.bool_vars_idx(:)) > max(size(c))) )
+        error('ecos:InvalidInput', 'otps.bool_vars_idx must be in [1,length(c)]');
+    end
+
+    if (isfield(otps, 'int_vars_idx') && ...
+            (min(otps.int_vars_idx(:)) < 1 || max(otps.int_vars_idx(:)) > max(size(c))) )
+        error('ecos:InvalidInput', 'otps.int_vars_idx must be in [1,length(c)]');
+    end
+end
+
+if (nargin == 4)
+    [x,y,info,s,z] = ecos_c(c,G,h,dims);
+elseif (nargin == 5)
+    [x,y,info,s,z] = ecos_c(c,G,h,dims,otps);
+elseif (nargin == 6)
+    [x,y,info,s,z] = ecos_c(c,G,h,dims,A,b);
+elseif (nargin == 7)
+    [x,y,info,s,z] = ecos_c(c,G,h,dims,A,b,otps);
+else
+    error('ecos:InvalidInput', ['Invalid call to ecos, please type "help ecos" for correct usage']);
+end
+
+return
