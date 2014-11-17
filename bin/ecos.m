@@ -133,7 +133,7 @@ elseif (nargin == 6)
 elseif (nargin == 7)
     [x,y,info,s,z] = ecos_c(c,G,h,dims,A,b,otps);
 else
-    error('ecos:InvalidInput', ['Invalid call to ecos, please type "help ecos" for correct usage']);
+    error('ecos:InvalidInput', 'Invalid call to ecos, please type "help ecos" for correct usage');
 end
 
 return
