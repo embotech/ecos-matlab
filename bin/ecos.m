@@ -113,14 +113,18 @@ elseif (length(varargin) == 3)
 end
 
 if exist('otps','var')
-    if (isfield(otps, 'bool_vars_idx') && ...
-        (min(otps.bool_vars_idx(:)) < 1 || max(otps.bool_vars_idx(:)) > max(size(c))) )
-        error('ecos:InvalidInput', 'otps.bool_vars_idx must be in [1,length(c)]');
+    if (isfield(otps, 'bool_vars_idx'))
+        if (min(otps.bool_vars_idx(:)) < 1 || max(otps.bool_vars_idx(:)) > max(size(c))) 
+            error('ecos:InvalidInput', 'otps.bool_vars_idx must be in [1,length(c)]');
+        end
+        otps.bool_vars_idx = sort(otps.bool_vars_idx);
     end
 
-    if (isfield(otps, 'int_vars_idx') && ...
-            (min(otps.int_vars_idx(:)) < 1 || max(otps.int_vars_idx(:)) > max(size(c))) )
-        error('ecos:InvalidInput', 'otps.int_vars_idx must be in [1,length(c)]');
+    if (isfield(otps, 'int_vars_idx'))
+        if (min(otps.int_vars_idx(:)) < 1 || max(otps.int_vars_idx(:)) > max(size(c))) 
+            error('ecos:InvalidInput', 'otps.int_vars_idx must be in [1,length(c)]');
+        end
+        otps.int_vars_idx = sort(otps.int_vars_idx);
     end
 end
 
