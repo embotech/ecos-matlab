@@ -161,7 +161,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         opts_bool_idx_size = mxGetDimensions(opts_bool_idx);
         /* Retrieve the number of boolean vars */
         num_bool_vars = (idxint) (opts_bool_idx_size[1] > opts_bool_idx_size[0] ? opts_bool_idx_size[1] : opts_bool_idx_size[0]);
+#if MI_PRINTLEVEL > 2
         mexPrintf("Num bool vars: %u\n", num_bool_vars );
+#endif
       }
 
       opts_int_idx = opts ? mxGetField(opts, 0, "int_vars_idx") : 0;
@@ -169,7 +171,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         opts_int_idx_size = mxGetDimensions(opts_int_idx);
         /* Retrieve the number of boolean vars */
         num_int_vars = (idxint) (opts_int_idx_size[1] > opts_int_idx_size[0] ? opts_int_idx_size[1] : opts_int_idx_size[0]);
+#if MI_PRINTLEVEL > 2
         mexPrintf("Num int vars: %u\n", num_int_vars );
+#endif
       }
       
       opts_verbose = opts ? mxGetField(opts, 0, "verbose") : 0;
@@ -340,13 +344,23 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         if (num_bool_vars > 0){
             /* Shift the boolean indexes from matlab style (start at 1) to C style (start at 0) */
             bool_vars_idx = (idxint *)mxMalloc(num_bool_vars*sizeof(idxint));        
-            for( i=0; i < num_bool_vars; ++i){ bool_vars_idx[i] = (idxint) ((mxGetPr(opts_bool_idx))[i] - 1); mexPrintf("\t%u : %u\n",i, bool_vars_idx[i]);}
+            for( i=0; i < num_bool_vars; ++i){ 
+				bool_vars_idx[i] = (idxint) ((mxGetPr(opts_bool_idx))[i] - 1); 
+#if MI_PRINTLEVEL > 2
+				mexPrintf("\t%u : %u\n",i, bool_vars_idx[i]);
+#endif
+			}
         }
 
         if (num_int_vars > 0){
             /* Shift the integer indexes from matlab style (start at 1) to C style (start at 0) */
             int_vars_idx = (idxint *)mxMalloc(num_int_vars*sizeof(idxint));        
-            for( i=0; i < num_int_vars; ++i){ int_vars_idx[i] = (idxint) ((mxGetPr(opts_int_idx))[i] - 1); mexPrintf("\t%u : %u\n",i, int_vars_idx[i]);}
+            for( i=0; i < num_int_vars; ++i){ 
+				int_vars_idx[i] = (idxint) ((mxGetPr(opts_int_idx))[i] - 1); 
+#if MI_PRINTLEVEL > 2
+				mexPrintf("\t%u : %u\n",i, int_vars_idx[i]);
+#endif
+			}
         }
         
         bb_pwork = ECOS_BB_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, cpr, hpr, bpr, num_bool_vars, bool_vars_idx, num_int_vars, int_vars_idx);
