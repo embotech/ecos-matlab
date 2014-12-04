@@ -390,15 +390,16 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             if(opts_mi_abs_tol_gap != NULL ){ opts_ecos_bb.abs_tol_gap = (pfloat)(*mxGetPr(opts_mi_abs_tol_gap));}
             if(opts_mi_rel_tol_gap != NULL ){ opts_ecos_bb.rel_tol_gap = (pfloat)(*mxGetPr(opts_mi_rel_tol_gap));}
             if(opts_mi_integer_tol != NULL ){ opts_ecos_bb.integer_tol = (pfloat)(*mxGetPr(opts_mi_integer_tol));}
-
-            /* If disable ECOS's own verbosity, this will be overridden below if an option is explicitly passed in */
-            if(opts_verbose != NULL ) { mywork->stgs->verbose = 0;}
         }
 
         bb_pwork = ECOS_BB_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, 
             cpr, hpr, bpr, num_bool_vars, bool_vars_idx, num_int_vars, int_vars_idx, &opts_ecos_bb);
         
         mywork = bb_pwork->ecos_prob;
+        
+        /* If disable ECOS's own verbosity, this will be overridden below if an option is explicitly passed in */
+        mywork->stgs->verbose = 0;
+        
     }else{
         /* This calls ECOS setup function. */
         mywork = ECOS_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, cpr, hpr, bpr);
