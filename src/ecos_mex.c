@@ -47,6 +47,13 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     const mxArray* opts_reltol_inacc = NULL;
     const mxArray* opts_abstol_inacc = NULL;
     const mxArray* opts_maxit = NULL;
+
+    const mxArray* opts_mi_verbose = NULL;
+    const mxArray* opts_mi_maxit = NULL;
+    const mxArray* opts_mi_abs_tol_gap = NULL;
+    const mxArray* opts_mi_rel_tol_gap = NULL;
+    const mxArray* opts_mi_integer_tol = NULL;
+
     const mwSize *size_c;
     const mwSize *size_G;
     const mwSize *size_h;
@@ -130,6 +137,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     pwork* mywork;
     ecos_bb_pwork* bb_pwork;
     
+    settings_bb opts_ecos_bb;
+    opts_ecos_bb.verbose = 1;         
+    opts_ecos_bb.maxit = MI_MAXITER;
+    opts_ecos_bb.abs_tol_gap = MI_ABS_EPS;     
+    opts_ecos_bb.rel_tol_gap = MI_REL_EPS;
+    opts_ecos_bb.integer_tol = MI_INT_TOL;
 
 #ifdef MEXARGMUENTCHECKS     
     if( !(nrhs >= 4 && nrhs <= 7) )
@@ -175,7 +188,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         mexPrintf("Num int vars: %u\n", num_int_vars );
 #endif
       }
-      
+      /* Catch ECOS options */
       opts_verbose = opts ? mxGetField(opts, 0, "verbose") : 0;
       opts_abstol = opts ? mxGetField(opts, 0, "abstol") : 0;
       opts_feastol = opts ? mxGetField(opts, 0, "feastol") : 0;
@@ -184,6 +197,13 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       opts_feastol_inacc = opts ? mxGetField(opts, 0, "feastol_inacc") : 0;
       opts_reltol_inacc = opts ? mxGetField(opts, 0, "reltol_inacc") : 0;
       opts_maxit = opts ? mxGetField(opts, 0, "maxit") : 0;
+
+      /* Catch ECOS BB options */
+      opts_mi_verbose = opts ? mxGetField(opts, 0, "mi_verbose") : NULL;
+      opts_mi_maxit = opts ? mxGetField(opts, 0, "mi_maxit") : NULL;
+      opts_mi_abs_tol_gap = opts ? mxGetField(opts, 0, "mi_abs_eps") : NULL;
+      opts_mi_rel_tol_gap = opts ? mxGetField(opts, 0, "mi_rel_eps") : NULL;
+      opts_mi_integer_tol = opts ? mxGetField(opts, 0, "mi_int_tol") : NULL;
     }
     
     /* determine sizes */
@@ -362,8 +382,21 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 #endif
 			}
         }
-        
-        bb_pwork = ECOS_BB_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, cpr, hpr, bpr, num_bool_vars, bool_vars_idx, num_int_vars, int_vars_idx);
+
+        /* Set options */
+        if( opts != NULL ) {
+            if(opts_mi_verbose != NULL )    { opts_ecos_bb.verbose = mxIsLogical(opts_mi_verbose) ? (idxint) (*mxGetLogicals(opts_mi_verbose)) : (idxint)(*mxGetPr(opts_mi_verbose)); }
+            if(opts_mi_maxit != NULL )      { opts_ecos_bb.maxit = (idxint)(*mxGetPr(opts_mi_maxit));}
+            if(opts_mi_abs_tol_gap != NULL ){ opts_ecos_bb.abs_tol_gap = (pfloat)(*mxGetPr(opts_mi_abs_tol_gap));}
+            if(opts_mi_rel_tol_gap != NULL ){ opts_ecos_bb.rel_tol_gap = (pfloat)(*mxGetPr(opts_mi_rel_tol_gap));}
+            if(opts_mi_integer_tol != NULL ){ opts_ecos_bb.integer_tol = (pfloat)(*mxGetPr(opts_mi_integer_tol));}
+
+            /* If disable ECOS's own verbosity, this will be overridden below if an option is explicitly passed in */
+            if(opts_verbose != NULL ) { mywork->stgs->verbose = 0;}
+        }
+
+        bb_pwork = ECOS_BB_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, 
+            cpr, hpr, bpr, num_bool_vars, bool_vars_idx, num_int_vars, int_vars_idx, &opts_ecos_bb);
         
         mywork = bb_pwork->ecos_prob;
     }else{
@@ -409,13 +442,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         {
             mywork->stgs->maxit = (idxint)(*mxGetPr(opts_maxit));
         }
-        
     }
       
     /* Solve! */    
     /* Switch between ecos_bb and ecos */
     if (opts_bool_idx != NULL || opts_int_idx != NULL){
-        mywork->stgs->verbose = 0; /* Disable prints */
         exitcode = ECOS_BB_solve(bb_pwork);
     }else{
         exitcode = ECOS_solve(mywork);
