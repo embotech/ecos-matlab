@@ -534,10 +534,18 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 		mxSetField(plhs[2], 0, "r0", outvar);
         
         /* 12. iterations */
-		outvar = mxCreateDoubleMatrix(1, 1, mxREAL);
-		*mxGetPr(outvar) = (double)mywork->info->iter;
-		mxSetField(plhs[2], 0, "iter", outvar);
-        
+        /* 16. Set mixed integer iteration count */
+        if (opts_bool_idx != NULL || opts_int_idx != NULL){
+            outvar = mxCreateDoubleMatrix(1, 1, mxREAL);
+            *mxGetPr(outvar) = (double) bb_pwork->iter;
+            mxSetField(plhs[2], 0, "iter", outvar);
+        }else{
+    		outvar = mxCreateDoubleMatrix(1, 1, mxREAL);
+    		*mxGetPr(outvar) = (double)mywork->info->iter;
+    		mxSetField(plhs[2], 0, "iter", outvar);
+        }
+
+
         /* 13. infostring */
         if (opts_bool_idx != NULL || opts_int_idx != NULL){
             switch( exitcode ){
@@ -661,6 +669,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 		outvar = mxCreateDoubleMatrix(1, 1, mxREAL);
 		*mxGetPr(outvar) = (double)numerr;
 		mxSetField(plhs[2], 0, "numerr", outvar);        
+
+        
     }
     
     /* s */
