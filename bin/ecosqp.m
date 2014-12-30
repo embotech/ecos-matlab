@@ -37,6 +37,18 @@ function [X,fval,exitflag,output,lambda,Tsolve,c,G,h,dims,Aeq,beq] = ecosqp(H,f,
 %     -2  Problem is (primal) infeasible.
 %     -3  Problem is unbounded (dual infeasible).
 %
+%
+%   [X,FVAL,EXITFLAG,INFO] = ECOSQP(...) returns in addition the
+%   INFO struct as returned for the converted problem by ECOS. See the ECOS
+%   documentation for more help on the particular fields of the INFO
+%   struct.
+%
+%   [X,FVAL,EXITFLAG,INFO,TSOLVE] = ECOSQP(...) returns the runtime for
+%   solving the converted problem as returned by ECOS. Note that this can
+%   be different from a "tic; ecosqp(...); toc;" since an initial "square
+%   root factorization" of the Hessian H is to be performed first.
+%
+%
 % This file is an interface for ECOS, and rewrites the QP as a second-order
 % cone program (SOCP) that can be solved by ECOS. The rewriting occurs
 % through an epigraph reformulation of the objective function,
