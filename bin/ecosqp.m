@@ -144,7 +144,9 @@ assert( ~isempty(H),'Quadratic programming requires a Hessian.');
 try
     tic
     W = chol(H,'upper');
-    fprintf('ECOSQP: Time for Cholesky: %4.2f seconds\n', toc);
+    if( opts.verbose > 0 )
+        fprintf('ECOSQP: Time for Cholesky: %4.2f seconds\n', toc);
+    end
 catch %#ok<CTCH>
     warning('Hessian not positive definite, using sqrt(H) instead of chol');
     W = sqrt(H);
