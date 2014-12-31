@@ -1,23 +1,28 @@
 ecos-matlab
 ===========
 
-Matlab interface for ECOS.
+Matlab interface for ECOS, the Embedded Conic Solver.
 
-Content
+Repository Content
 ====
 
-bin: directory with all executable files, also the script for making them (makemex.m) is in here.
+You will find the following directories in this repository:
 
-conelp: Matlab implementation of ECOS with different linear system solver options.
-
-src: mex interface C file
-
-test: testing code
-
-
+* `bin`: directory with all executable files, also the script for making them (makemex.m) is in here.
+* `conelp`: Matlab implementation of ECOS with different linear system solver options.
+* `src`: mex interface C file
+* `test`: testing code
 
 Using ECOS in MATLAB
 ====
+
+ECOS can be used in three different ways within MATLAB:
+
+- native MEX interface ([read more](https://www.embotech.com/ECOS/Matlab-Interface/Matlab-Native))
+- via CVX ([read more](https://www.embotech.com/ECOS/Matlab-Interface/CVX))
+- via YALMIP ([read more](https://www.embotech.com/ECOS/Matlab-Interface/Yalmip))
+
+In either case, you need to build the mex binary first for your platform, or download it from [embotech](https://embotech.com/ECOS/Download).
 
 
 Compiling ECOS for MATLAB
@@ -78,7 +83,6 @@ In addition, the struct `info` is returned which contains the following fields:
      dinfres: 3.9666e+15
          gap: duality gap
       relgap: relative duality gap
-          r0: ???
       numerr: numerical error?
         iter: number of iterations
       timing: struct with timing information
@@ -198,3 +202,18 @@ Once the ECOS shim is installed, the CVX solver can be switched using the `cvx_s
 
 *IMPORTANT*: Not all of CVX's atoms are SOCP-representable. Some of the atoms implemented in CVX require the use of SDP cones. Some atoms that could be implemented with a second-order cone are instead implemented as SDPs, but these are automatically converted to SOC cones. See
 [Issue #8](https://github.com/ifa-ethz/ecos/issues/8) for more information.
+
+
+Using ECOS with YALMIP
+====
+As of release R20130628, [YALMIP](http://users.isy.liu.se/johanl/yalmip/) supports ECOS as a solver - simply use the command
+```
+sdpsettings('solver','ecos');
+```
+to select ECOS as the solver for your problem. Below is a toy example:
+```
+% Solve 1000 SOCPs
+x = sdpvar(3,1);
+Ufo= [norm(x) <= 2, norm(x+1) <= 2];
+plot(Ufo,x,'y',1000,sdpsettings('solver','ecos'))
+```
