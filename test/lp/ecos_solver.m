@@ -15,7 +15,7 @@ h_ = zeros(2, 1);
 dims.q = [];
 dims.l = 2;
 
-[x_codegen, y_, info_] = ecos(full(c_), G_, h_, dims, A_, full(b_), opts);
+[x_codegen, y_, info_] = ecos(full(c_), G_, h_, dims, A_, full(b_));
 
 t0 = x_codegen(1:1);
 t3 = x_codegen(2:3);
