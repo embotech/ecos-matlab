@@ -1,7 +1,7 @@
 /*
  * ECOS - Embedded Conic Solver.
- * Copyright (C) 2012-13 Alexander Domahidi [domahidi@control.ee.ethz.ch],
- * Automatic Control Laboratory, ETH Zurich.
+ * Copyright (C) 2012-14 A. Domahidi [domahidi@embotech.com],
+ * Automatic Control Lab, ETH Zurich & embotech GmbH, Zurich, Switzerland.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -134,6 +134,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     pfloat *hpr = NULL;
     pfloat *bpr = NULL;
     
+    double *int_idx = NULL;
+    double *bool_idx = NULL;
+    
     pwork* mywork;
     ecos_bb_pwork* bb_pwork;
     
@@ -147,7 +150,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 #ifdef MEXARGMUENTCHECKS     
     if( !(nrhs >= 4 && nrhs <= 7) )
     {
-        mexPrintf("ECOS %s - (c) A. Domahidi, Automatic Control Laboratory, ETH Zurich, 2012-14.\n", ECOS_VERSION);
+        mexPrintf("ECOS %s - (c) A. Domahidi, ETH Zurich and embotech 2012-14. Support: ecos@embotech.com\n", ECOS_VERSION);
         mexErrMsgTxt("ECOS takes 4 to 7 arguments: ECOS(c,G,h,dims), ECOS(c,G,h,dims,opts), ECOS(c,G,h,dims,A,b), or ECOS(c,G,h,dims,A,b,opts)");
     }
 #endif    
@@ -177,6 +180,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 #if MI_PRINTLEVEL > 2
         mexPrintf("Num bool vars: %u\n", num_bool_vars );
 #endif
+        bool_idx = mxGetPr(opts_bool_idx);
       }
 
       opts_int_idx = opts ? mxGetField(opts, 0, "int_vars_idx") : 0;
@@ -187,23 +191,76 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 #if MI_PRINTLEVEL > 2
         mexPrintf("Num int vars: %u\n", num_int_vars );
 #endif
+        int_idx = mxGetPr(opts_int_idx);
       }
       /* Catch ECOS options */
-      opts_verbose = opts ? mxGetField(opts, 0, "verbose") : 0;
-      opts_abstol = opts ? mxGetField(opts, 0, "abstol") : 0;
-      opts_feastol = opts ? mxGetField(opts, 0, "feastol") : 0;
-      opts_reltol = opts ? mxGetField(opts, 0, "reltol") : 0;
-      opts_abstol_inacc = opts ? mxGetField(opts, 0, "abstol_inacc") : 0;
-      opts_feastol_inacc = opts ? mxGetField(opts, 0, "feastol_inacc") : 0;
-      opts_reltol_inacc = opts ? mxGetField(opts, 0, "reltol_inacc") : 0;
-      opts_maxit = opts ? mxGetField(opts, 0, "maxit") : 0;
+      opts_verbose = opts ? mxGetField(opts, 0, "VERBOSE") : 0;
+      if( !opts_verbose ){
+          opts_verbose = opts ? mxGetField(opts, 0, "verbose") : 0;
+      }
+      
+      opts_abstol = opts ? mxGetField(opts, 0, "ABSTOL") : 0;
+      if( !opts_abstol ){
+          opts_abstol = opts ? mxGetField(opts, 0, "abstol") : 0;
+      }
+            
+      opts_feastol = opts ? mxGetField(opts, 0, "FEASTOL") : 0;
+      if( !opts_feastol ){
+          opts_feastol = opts ? mxGetField(opts, 0, "feastol") : 0;
+      }
+      
+      opts_reltol = opts ? mxGetField(opts, 0, "RELTOL") : 0;
+      if( !opts_reltol ){
+          opts_reltol = opts ? mxGetField(opts, 0, "reltol") : 0;
+      }
+      
+      opts_abstol_inacc = opts ? mxGetField(opts, 0, "ABSTOL_INACC") : 0;
+      if( !opts_abstol_inacc ){
+          opts_abstol_inacc = opts ? mxGetField(opts, 0, "abstol_inacc") : 0;
+      }
+      
+      opts_feastol_inacc = opts ? mxGetField(opts, 0, "FEASTOL_INACC") : 0;
+      if( !opts_feastol_inacc ){
+          opts_feastol_inacc = opts ? mxGetField(opts, 0, "feastol_inacc") : 0;
+      }
+      
+      opts_reltol_inacc = opts ? mxGetField(opts, 0, "RELTOL_INACC") : 0;
+      if( !opts_reltol_inacc ){
+          opts_reltol_inacc = opts ? mxGetField(opts, 0, "reltol_inacc") : 0;
+      }
+      
+      opts_maxit = opts ? mxGetField(opts, 0, "MAXIT") : 0;
+      if( !opts_maxit ){
+          opts_maxit = opts ? mxGetField(opts, 0, "maxit") : 0;
+      }
+            
 
       /* Catch ECOS BB options */
-      opts_mi_verbose = opts ? mxGetField(opts, 0, "mi_verbose") : NULL;
-      opts_mi_maxit = opts ? mxGetField(opts, 0, "mi_maxit") : NULL;
-      opts_mi_abs_tol_gap = opts ? mxGetField(opts, 0, "mi_abs_eps") : NULL;
-      opts_mi_rel_tol_gap = opts ? mxGetField(opts, 0, "mi_rel_eps") : NULL;
-      opts_mi_integer_tol = opts ? mxGetField(opts, 0, "mi_int_tol") : NULL;
+      opts_mi_verbose = opts ? mxGetField(opts, 0, "MI_VERBOSE") : NULL;
+      if( opts_mi_verbose == NULL ){
+          opts_mi_verbose = opts ? mxGetField(opts, 0, "mi_verbose") : NULL;
+      }
+      
+      opts_mi_maxit = opts ? mxGetField(opts, 0, "MI_MAXIT") : NULL;
+      if( opts_mi_maxit == NULL ){
+          opts_mi_maxit = opts ? mxGetField(opts, 0, "mi_maxit") : NULL;
+      }
+      
+      opts_mi_abs_tol_gap = opts ? mxGetField(opts, 0, "MI_ABS_TOL") : NULL;
+      if( opts_mi_abs_tol_gap == NULL ){
+          opts_mi_abs_tol_gap = opts ? mxGetField(opts, 0, "mi_abs_tol") : NULL;
+      }
+      
+      opts_mi_rel_tol_gap = opts ? mxGetField(opts, 0, "MI_REL_TOL") : NULL;
+      if( opts_mi_rel_tol_gap == NULL ){
+          opts_mi_rel_tol_gap = opts ? mxGetField(opts, 0, "mi_rel_tol") : NULL;
+      }
+            
+      opts_mi_integer_tol = opts ? mxGetField(opts, 0, "MI_INT_TOL") : NULL;
+      if( opts_mi_integer_tol ){
+          opts_mi_integer_tol = opts ? mxGetField(opts, 0, "mi_int_tol") : NULL;
+      }
+      
     }
     
     /* determine sizes */
@@ -315,6 +372,33 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     if( nlhs > 5 ){
          mexErrMsgTxt("ECOS has up to 5 output arguments only");
     }
+
+    
+    /* check bool and int index ranges */
+    if( bool_idx != NULL )
+    {
+        for( i=0; i<num_bool_vars; i++ )
+        {
+            if( (idxint)bool_idx[i] < 1 || (idxint)bool_idx[i] > n )
+            {
+                mexErrMsgTxt("Invalid index entry in BOOL_VARS_IDX - all entries must be in [1, length(c)]");
+            }
+        }
+    }
+
+
+    if( int_idx != NULL )
+    {
+        for( i=0; i<num_int_vars; i++ )
+        {
+            if( (idxint)int_idx[i] < 1 || (idxint)int_idx[i] > n )
+            {
+                mexErrMsgTxt("Invalid index entry in INT_VARS_IDX - all entries must be in [1, length(c)]");
+            }
+        }
+    }
+
+
 #endif
 
     /* find out dimensions of cones */    

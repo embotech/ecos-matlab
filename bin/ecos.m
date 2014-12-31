@@ -1,4 +1,3 @@
-function [x,y,info,s,z] = ecos(c,G,h,dims,varargin)
 % ECOS - Embedded COnic Solver.
 %
 % Self-dual homogeneous embedding interior point implementation for optimization
@@ -78,66 +77,23 @@ function [x,y,info,s,z] = ecos(c,G,h,dims,varargin)
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,otps) and 
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,A,b,otps) are as above, with the struct 
 %   otps used to control settings of the solver. The following fields can
-%   be present (use ECOSOPTIMSET to obtain a default initialization):
+%   be present (use ECOSOPTIMSET to obtain a default initialization).
 %
-%      .verbose - whether to inform on progess (default: true)
-%      .feastol - stopping tolerance on infeasibilities (default: 1e-5)
-%      .abstol  - stopping tolerance (default: 1e-6)
-%      .reltol  - rel. stopping toletance (default: 1e-6)
-%      .maxit   - maximum number of iterations (default: 30)
-% 
 %
 % Details on ECOS can be found at http://embotech.com/ECOS and in the paper 
 %    Alexander Domahidi, Eric Chu, Stephen Boyd. "ECOS: An Embedded
 %    Conic Solver." In proceedings of European Control Conference (ECC), 
 %    pp. 3071-3076, Zurich, Switzerland, July 2013."
 %
+% More details are given in A. Domahidi's PhD Thesis (Chapter 9): 
+%    http://e-collection.library.ethz.ch/view/eth:7611
+%
 %
 % (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
 %
+% The branch and bound module is (c) Han Wang, Stanford University.
 %
-% COPYING: ECOS is under GPLv3. For commercial licenses and professional
-% support send an email to ecos@embotech.com.
+% LICENSE: ECOS is distributed under GPLv3. For commercial licenses and 
+%          professional support contact embotech at ecos@embotech.com.
 %
 % See also ECOSQP ECOSOPTIMSET ECOS_LICENSE
-
-if (length(varargin) == 1)
-    otps = varargin{1};
-elseif (length(varargin) == 2)
-    A = varargin{1};
-    b = varargin{2};
-elseif (length(varargin) == 3)
-    A = varargin{1};
-    b = varargin{2};
-    otps = varargin{3};
-end
-
-if exist('otps','var')
-    if (isfield(otps, 'bool_vars_idx'))
-        if (min(otps.bool_vars_idx(:)) < 1 || max(otps.bool_vars_idx(:)) > max(size(c))) 
-            error('ecos:InvalidInput', 'otps.bool_vars_idx must be in [1,length(c)]');
-        end
-        otps.bool_vars_idx = sort(otps.bool_vars_idx);
-    end
-
-    if (isfield(otps, 'int_vars_idx'))
-        if (min(otps.int_vars_idx(:)) < 1 || max(otps.int_vars_idx(:)) > max(size(c))) 
-            error('ecos:InvalidInput', 'otps.int_vars_idx must be in [1,length(c)]');
-        end
-        otps.int_vars_idx = sort(otps.int_vars_idx);
-    end
-end
-
-if (nargin == 4)
-    [x,y,info,s,z] = ecos_c(c,G,h,dims);
-elseif (nargin == 5)
-    [x,y,info,s,z] = ecos_c(c,G,h,dims,otps);
-elseif (nargin == 6)
-    [x,y,info,s,z] = ecos_c(c,G,h,dims,A,b);
-elseif (nargin == 7)
-    [x,y,info,s,z] = ecos_c(c,G,h,dims,A,b,otps);
-else
-    error('ecos:InvalidInput', 'Invalid call to ecos, please type "help ecos" for correct usage');
-end
-
-return
