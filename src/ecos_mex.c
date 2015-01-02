@@ -383,6 +383,13 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             {
                 mexErrMsgTxt("Invalid index entry in BOOL_VARS_IDX - all entries must be in [1, length(c)]");
             }
+            if( i>0 )
+            {
+                if( (idxint)bool_idx[i] <= (idxint)bool_idx[i-1] )
+                {
+                    mexErrMsgTxt("Invalid index entry in BOOL_VARS_IDX - entries must be strictly monotonically increasing");
+                }
+            }
         }
     }
 
@@ -394,6 +401,13 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             if( (idxint)int_idx[i] < 1 || (idxint)int_idx[i] > n )
             {
                 mexErrMsgTxt("Invalid index entry in INT_VARS_IDX - all entries must be in [1, length(c)]");
+            }
+            if( i>0 )
+            {
+                if( (idxint)int_idx[i] <= (idxint)int_idx[i-1] )
+                {
+                    mexErrMsgTxt("Invalid index entry in INT_VARS_IDX - entries must be strictly monotonically increasing");
+                }
             }
         }
     }
