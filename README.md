@@ -18,8 +18,8 @@ Using ECOS in MATLAB
 
 ECOS can be used in three different ways within MATLAB:
 
-- native MEX interface: [learn more](https://www.embotech.com/ECOS/Matlab-Interface/Matlab-Native)
-- via CVX [learn more](https://www.embotech.com/ECOS/Matlab-Interface/CVX)
-- via YALMIP [read more](https://www.embotech.com/ECOS/Matlab-Interface/Yalmip)
+* [native MEX interface](https://www.embotech.com/ECOS/Matlab-Interface/Matlab-Native)
+* [through CVX](https://www.embotech.com/ECOS/Matlab-Interface/CVX)
+* [through YALMIP](https://www.embotech.com/ECOS/Matlab-Interface/Yalmip)
 
-In either case, you need a compiled mex binary for your platform, which you can download from [embotech](https://embotech.com/ECOS/Download). Alternatively, you can also build it from source (the bottom part of the [embotech download page](https://embotech.com/ECOS/Download) explains how).
+In either case, a compiled mex binary is required, which can be downloaded from [embotech](https://embotech.com/ECOS/Download). The bottom part of the latter page also explains how to build it from source.
