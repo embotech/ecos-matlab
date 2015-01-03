@@ -19,7 +19,6 @@ function opts = ecosoptimset(varargin)
 %      BOOL_VARS_IDX: index array of boolean variables (1-based indexing)
 %      INT_VARS_IDX:  index array of integer variables (1-based indexing)
 %      MI_MAXIT: maximum number of SOCP solves (branch&bound sub-problems)
-%      MI_INT_TOL: numerical tolerance on integer/boolean variables
 %      MI_ABS_GAP_TOL: required absolute gap between lower and upper bound
 %      MI_REL_GAP_TOL: required relative gap between lower and upper bound
 %                      w.r.t. upper bound
