@@ -28,7 +28,7 @@ function makemex(what)
 %        makemex purge - same as above, and also delete the mex files for
 %                        the specific platform the script is executed on. 
 %
-% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.  
+% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-15.  
 
 
 if( nargin == 0 )

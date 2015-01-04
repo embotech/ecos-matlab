@@ -77,7 +77,7 @@ function [X,fval,exitflag,output,lambda,Tsolve,c,G,h,dims,Aeq,beq] = ecosqp(H,f,
 %
 % See also ECOS ECOSOPTIMSET QUADPROG ECOS_LICENSE
 %
-% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
+% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-15.
 
 %% dimension and argument checking
 if( isempty(H) )

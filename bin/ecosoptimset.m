@@ -23,7 +23,7 @@ function opts = ecosoptimset(varargin)
 %      MI_REL_GAP_TOL: required relative gap between lower and upper bound
 %                      w.r.t. upper bound
 %
-% (C) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
+% (C) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-15.
 
 
 if( mod(nargin,2) ~= 0)

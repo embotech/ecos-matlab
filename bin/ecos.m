@@ -89,7 +89,7 @@
 %    http://e-collection.library.ethz.ch/view/eth:7611
 %
 %
-% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-14.
+% (c) A. Domahidi, ETH Zurich & embotech GmbH, Zurich, Switzerland, 2012-15.
 %
 % The branch and bound module is (c) Han Wang, Stanford University.
 %
