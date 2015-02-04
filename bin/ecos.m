@@ -74,11 +74,12 @@
 %      It is assumed that rank(A) = p and rank([A; G]) = n.
 %
 % 
-%   [x,y,info,s,z] = ECOS(c,G,h,dims,otps) and 
+%   [x,y,info,s,z] = ECOS(c,G,h,dims,opts) and 
 %   [x,y,info,s,z] = ECOS(c,G,h,dims,A,b,otps) are as above, with the struct 
-%   otps used to control settings of the solver. The following fields can
-%   be present (use ECOSOPTIMSET to obtain a default initialization).
-%
+%   otps used to control settings of the solver. Use the function ECOSOPTIMSET
+%   to obtain a default initialization, and see help ECOSOPTIMSET for more 
+%   details.
+% 
 %
 % Details on ECOS can be found at http://embotech.com/ECOS and in the paper 
 %    Alexander Domahidi, Eric Chu, Stephen Boyd. "ECOS: An Embedded
