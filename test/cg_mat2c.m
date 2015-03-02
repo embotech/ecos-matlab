@@ -20,6 +20,10 @@ if( ~isempty(M) )
 
 [m,n] = size(M);
 
+if( m > 1 && n > 1 )
+    isvec = 0;
+end
+
 if( m==1 )    
     isvec = 1;
 end

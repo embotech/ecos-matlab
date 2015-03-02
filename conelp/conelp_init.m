@@ -19,7 +19,7 @@ p = size(A,1);
 %% compute permutation
 Vpattern = conelp_scaling(dims, LINSOLVER, 'pattern');
 Kpattern = conelp_KKTmatrix(A,Gtilde,Vpattern,0);
-P = conelp_getPerm(Kpattern~=0);
+P = conelp_getPerm(Kpattern~=0, 0);
 
 
 %% assemble and factor coefficient matrix
