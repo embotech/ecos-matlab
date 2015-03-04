@@ -47,7 +47,7 @@ for i = 1:nItref
     % errors
     ex = bx - A'*y - G'*z;
     ey = by - A*x;
-    eztilde = conelp_stretch(bz - G*x,dims,2) + V*ztilde;
+    eztilde = conelp_stretch(bz - G*x,dims,Nstretch) + V*ztilde;
 %     e = [ex; ey; conelp_stretch(ez,dims,Nstretch)];
     e = [ex; ey; eztilde];
 %         fprintf('||ex||=%4.2e  ||ey||=%4.2e  ||ez||=%4.2e  (k=%d)\n', norm(ex)/bnorm, norm(ey)/bnorm, norm(eztilde)/bnorm, i);

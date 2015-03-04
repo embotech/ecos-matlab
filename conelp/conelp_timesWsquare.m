@@ -29,7 +29,7 @@ for k = 1:length(dims.q)
             beta = scaling.q(k).beta;
             lambda(coneidx,1) = d.*zk + alpha*u*(u'*zk) - [beta*zk(1); zeros(dims.q(k)-1,1)];
             
-        case 'ldlsparse'
+        case {'ldlsparse', 'cholesky'}
             u = scaling.q(k).u;
             v = scaling.q(k).v;
             d = scaling.q(k).d;

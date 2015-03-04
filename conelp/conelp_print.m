@@ -20,6 +20,7 @@ if( info.iter == 0 )
         case 'ldlsparse',    disp('Search direction computation: LDLSPARSE with sparse SOC scalings');  
         case 'rank1updates', disp('Search direction computation: LDLSPARSE + rank 1 updates');  
         case 'backslash',    disp('Search direction computation: MATLAB''s LDL + backslash');
+        case 'cholesky',     disp('Search direction computation: Normal equations + cholesky factorization');
     end
     fprintf('\n');
     if( ismac )

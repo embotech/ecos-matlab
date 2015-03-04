@@ -62,7 +62,7 @@ if( nargin == 3 )
                 I = eye(dims.q(i));
                 Vk_pattern = [I, e; e' -1];
                 
-            case 'ldlsparse'
+            case {'ldlsparse','cholesky'}
                 switch( MODE )
                     case 'pattern', e = ones(dims.q(i),1);
                                     oe = [0; ones(dims.q(i)-1,1)];
@@ -164,7 +164,7 @@ if( nargin == 5 )
                 Vk_noreg = D + alpha*(u*u') - beta*(v*v');
                
                 
-            case 'ldlsparse'
+            case {'ldlsparse','cholesky'}
 %                 u0_lower = c^2/(1/w+d);
 %                 u0_upper = a^2+w; %min([a^2+w, c^2/d]);
                 %if( u0_upper - u0_lower <= 0 )

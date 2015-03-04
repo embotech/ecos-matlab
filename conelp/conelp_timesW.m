@@ -22,7 +22,7 @@ for k = 1:length(dims.q)
         case 'backslash'
             lambda(coneidx,1) = scaling.q(k).W*zk;
         
-        case {'rank1updates', 'ldlsparse'}
+        case {'rank1updates', 'ldlsparse', 'cholesky'}
             a = scaling.q(k).a;
             zk1 = zk(2:end);
             zeta = scaling.q(k).q' * zk1;

@@ -75,7 +75,7 @@ tic;
 %% Parameters
 MAXIT = 30;           % maximum number of iterations
 GAMMA = 0.985;        % scaling the final step length
-EPS = 5e-9;              % regularization parameter
+EPS = 5e-9;           % regularization parameter
 NITREF = 3;           % number of iterative refinement steps
 FEASTOL = 5e-6;       % primal infeasibility tolerance
 ABSTOL  = 5e-7;       % absolute tolerance on duality gap
@@ -97,8 +97,10 @@ CONELP_FATAL    = -7; % Unknown problem in solver
 % 'backslash' (MATLAB)  
 % 'ldlsparse' (sparse LDL by Tim Davis)
 % 'rank1updates' (sparse LDL by Tim Davis + rank1updates)
+% 'cholesky' (normal equations form + cholesky factorization)
+
 if( ~exist('LINSOLVER','var') )  
-    LINSOLVER = 'ldlsparse';
+    LINSOLVER = 'cholesky';
 end                                                              
                                                                     
                                
@@ -137,7 +139,7 @@ info.dinf = 0;
 
 % need to stretch G to go with sparse representation (if needed)
 switch( LINSOLVER )
-    case 'ldlsparse', Gtilde = conelp_stretch(G, dims, 2);
+    case {'ldlsparse', 'cholesky'}, Gtilde = conelp_stretch(G, dims, 2);
     case 'rank1updates', Gtilde = conelp_stretch(G, dims, 1);
     otherwise, Gtilde = G;
 end
@@ -250,24 +252,41 @@ for nIt = 0:MAXIT+1
     end        
     
     %% 2. Affine search direction.
-
-    % build KKT matrix 
-    K = conelp_KKTmatrix(A, Gtilde, Vreg, EPS);
-  
-    % factor KKT matrix
-    [L,D,PL,QL,P] = conelp_factor(K,P,LINSOLVER,n,p,dims,scaling, c,b,h,kap,tau);    
-    assert( all( ~isnan(L(:)) ), 'Factorization returned NaN');
-    assert( all( ~isnan(D(:)) ), 'Factorization returned NaN');
     
-    % first solve for x1 y1 z1
-    [x1,y1,z1,info.nitref1] = conelp_solve(L,D,P,PL,QL, -c,b,h, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
-    assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
-    assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
-    assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+    if strcmp(LINSOLVER,'cholesky')
+        % Normal equation and cholesky factorization
+        L = conelp_factor_chol(A,Gtilde,Vtrue,EPS);
         
-    % second solve for x2 y2 z2
-    bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;            
-    [x2,y2,z2,info.nitref2] = conelp_solve(L,D,P,PL,QL, bx,by,bz, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
+        % first solve for x1 y1 z1
+        [x1,y1,z1,info.nitref1] = conelp_solve_chol(L,-c,b,h,A,Gtilde,Vtrue,dims,NITREF,LINSYSACC,EPS);
+        assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
+        assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
+        assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+        
+        %second solver for x2 y2 z2
+        bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;
+        [x2,y2,z2,info.nitref2] = conelp_solve_chol(L,bx,by,bz,A,Gtilde,Vtrue,dims,NITREF,LINSYSACC,EPS);
+    
+    else
+        % build KKT matrix 
+        K = conelp_KKTmatrix(A, Gtilde, Vreg, EPS);
+  
+        % factor KKT matrix
+        [L,D,PL,QL,P] = conelp_factor(K,P,LINSOLVER,n,p,dims,scaling, c,b,h,kap,tau);    
+        assert( all( ~isnan(L(:)) ), 'Factorization returned NaN');
+        assert( all( ~isnan(D(:)) ), 'Factorization returned NaN');
+    
+        % first solve for x1 y1 z1
+        [x1,y1,z1,info.nitref1] = conelp_solve(L,D,P,PL,QL, -c,b,h, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
+        assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
+        assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
+        assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+        
+        % second solve for x2 y2 z2
+        bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;            
+        [x2,y2,z2,info.nitref2] = conelp_solve(L,D,P,PL,QL, bx,by,bz, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
+    end
+    
     if( p > 0 ), by1 = b'*y1; else by1 = 0; end    
     if( p > 0 ), by2 = b'*y2; else by2 = 0; end  
     dtau_denom = kap/tau - (c'*x1 + by1 + h'*z1);
@@ -305,7 +324,13 @@ for nIt = 0:MAXIT+1
     bkap = kap*tau - sigma*info.mu + dkapaff*dtauaff;
     lambda_raute_bs = conelp_raute(lambda,bs,dims);    
     W_times_lambda_raute_bs = conelp_timesW(scaling,lambda_raute_bs,dims,LINSOLVER);
-    [x2, y2, z2,info.nitref3] = conelp_solve(L,D,P,PL,QL, (1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz + W_times_lambda_raute_bs, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC); 
+    
+    if strcmp(LINSOLVER,'cholesky')
+        [x2, y2, z2,info.nitref3] = conelp_solve_chol(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,Gtilde,Vtrue,dims,NITREF,LINSYSACC,EPS);
+    else
+        [x2, y2, z2,info.nitref3] = conelp_solve(L,D,P,PL,QL, (1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz + W_times_lambda_raute_bs, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
+    end
+    
     if( p > 0 ), by2 = b'*y2; else by2 = 0; end
     dtau = ((1-sigma)*rt - bkap/tau + c'*x2 + by2 + h'*z2) / dtau_denom;
     dx = x2 + dtau*x1;     dy = y2 + dtau*y1;       dz = z2 + dtau*z1;

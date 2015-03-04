@@ -26,8 +26,11 @@ P = conelp_getPerm(Kpattern~=0, 0);
 Vinit = conelp_scaling(dims, LINSOLVER, 'init');
 Kinit = conelp_KKTmatrix(A,Gtilde,Vinit,EPS);
 % [Linit,Dinit] = conelp_factor(Kinit,P);
-[Linit,Dinit,~,~,P] = conelp_factor(Kinit,P,LINSOLVER,n,p,dims);
-
+if strcmp(LINSOLVER,'cholesky')
+    L = conelp_factor_chol(A,Gtilde,Vinit,EPS);
+else
+    [Linit,Dinit,~,~,P] = conelp_factor(Kinit,P,LINSOLVER,n,p,dims);
+end
 
 %% primal variables
 %  * solve xhat = arg min ||Gx-h||_2^2  such that Ax = b
@@ -44,11 +47,12 @@ Kinit = conelp_KKTmatrix(A,Gtilde,Vinit,EPS);
 % v = M\[zeros(n,1); b; h];
 % xhat = v(1:n);
 % r = -v(n+p+1:end);
-
-[xhat, ~, minus_r] = conelp_solve(Linit,Dinit,P,[],[], zeros(n,1),b,h, A,G,Vinit, dims, NITREF,LINSOLVER, LINSYSACC);
+if strcmp(LINSOLVER,'cholesky')
+    [xhat, ~, minus_r] = conelp_solve_chol(L,zeros(n,1),b,h,A,Gtilde,Vinit,dims,NITREF,LINSYSACC,EPS);
+else
+    [xhat, ~, minus_r] = conelp_solve(Linit,Dinit,P,[],[], zeros(n,1),b,h, A,G,Vinit, dims, NITREF,LINSOLVER, LINSYSACC);
+end
 shat = bring2cone(-minus_r,dims);
-
-
 %% dual variables
 % solve (yhat,zbar) = arg min ||z||_2^2 such that G'*z + A'*y + c = 0
 %
@@ -64,9 +68,11 @@ shat = bring2cone(-minus_r,dims);
 %v = M\[-c; zeros(p,1); zeros(m,1)];
 %yhat = v(n+1:n+p);
 %zbar = v(n+p+1:end);
-
-
-[~, yhat, zbar] = conelp_solve(Linit,Dinit,P,[],[], -c,zeros(p,1),zeros(m,1), A,G,Vinit, dims, NITREF,LINSOLVER,LINSYSACC);
+if strcmp(LINSOLVER,'cholesky')
+    [~, yhat, zbar] = conelp_solve_chol(L,-c,zeros(p,1),zeros(m,1),A,Gtilde,Vinit,dims,NITREF,LINSYSACC,EPS);
+else
+    [~, yhat, zbar] = conelp_solve(Linit,Dinit,P,[],[], -c,zeros(p,1),zeros(m,1), A,G,Vinit, dims, NITREF,LINSOLVER,LINSYSACC);
+end
 zhat = bring2cone(zbar,dims);
 
 %% homogeneous embedding variables
