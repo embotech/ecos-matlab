@@ -113,6 +113,7 @@ txt = [txt; 'idxint ', prefix, 'm = ',num2str(m),';'];
 txt = [txt; 'idxint ', prefix, 'p = ',num2str(p),';'];
 txt = [txt; 'idxint ', prefix, 'l = ',num2str(dims.l),';'];
 txt = [txt; 'idxint ', prefix, 'ncones = ',num2str(length(dims.q)),';'];
+txt = [txt; 'idxint ', prefix, 'nexc = ',num2str(dims.e),';'];
 
 disp('Creating string for c...');
 txt = [txt; cg_mat2c('pfloat',[prefix,'c'],c,'%20.18e')];

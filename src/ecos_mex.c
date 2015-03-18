@@ -36,6 +36,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     const mxArray* dims;
     const mxArray* dims_l;
     const mxArray* dims_q;
+    const mxArray* dims_e;
     const mxArray* opts = NULL;
     const mxArray* opts_bool_idx = NULL;
     const mxArray* opts_int_idx = NULL;
@@ -47,6 +48,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     const mxArray* opts_reltol_inacc = NULL;
     const mxArray* opts_abstol_inacc = NULL;
     const mxArray* opts_maxit = NULL;
+#ifdef EXPCONE
+    const mxArray* opts_centrality   = NULL;
+#endif 
 
     const mxArray* opts_mi_verbose = NULL;
     const mxArray* opts_mi_maxit = NULL;
@@ -111,6 +115,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     idxint *bool_vars_idx = NULL;
     idxint *int_vars_idx = NULL;
     idxint ncones;
+    idxint nexc;
     idxint numConicVariables = 0;
     idxint num_bool_vars = 0;
     idxint num_int_vars = 0;
@@ -163,6 +168,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     dims_l = dims ? mxGetField(dims, 0, "l") : NULL;
     dims_q = dims ? mxGetField(dims, 0, "q") : NULL; 
     size_q = dims_q ? mxGetDimensions(dims_q) : (const mwSize *) &ZERO;
+    dims_e = dims ? mxGetField(dims,0, "e") : NULL;
     if( nrhs >= 6 )
     {
         A = prhs[4];  size_A = A ? mxGetDimensions(A) : (const mwSize *) &ZERO;
@@ -234,7 +240,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
           opts_maxit = opts ? mxGetField(opts, 0, "maxit") : 0;
       }
             
-
+      /* Catch the expcone options*/
+      opts_centrality = opts ? mxGetField(opts, 0, "CENTRALITY") : 0;
+      if( !opts_centrality ){
+        opts_centrality = opts ? mxGetField(opts,0,"centrality") : 0;
+      } 
+ 
       /* Catch ECOS BB options */
       opts_mi_verbose = opts ? mxGetField(opts, 0, "MI_VERBOSE") : NULL;
       if( opts_mi_verbose == NULL ){
@@ -313,11 +324,9 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     {
         mexErrMsgTxt("Struct dims expected as 4th argument");
     }
-
-    if( dims_l == NULL && dims_q == NULL )	{
-        mexErrMsgTxt("Neither dims.l nor dims.q exist - unconstrained problem?");
-    } 
-        
+    if( dims_l == NULL && dims_q == NULL && dims_e == NULL)	{
+        mexErrMsgTxt("Neither dims.l nor dims.q exist nor dims.e - unconstrained problem?");
+    }       
     if( mxIsSparse(c) )
     {
        mexErrMsgTxt("c must be a dense vector");
@@ -426,8 +435,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         ncones = 0;
     } else {
         ncones = size_q[1] > size_q[0] ? size_q[1] : size_q[0];
-    }
-    
+    } 
+    nexc = dims_e ? (idxint)(*mxGetPr(dims_e)):0; numConicVariables += 3*nexc;
     /* get problem data in right format matrices */
     if( m > 0){
         Gpr = (pfloat *)mxGetPr(G);
@@ -500,7 +509,7 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         
     }else{
         /* This calls ECOS setup function. */
-        mywork = ECOS_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, cpr, hpr, bpr);
+        mywork = ECOS_setup(n, m, p, l, ncones, qint, nexc, Gpr, Gjc, Gir, Apr, Ajc, Air, cpr, hpr, bpr);
     }    
     
     if( mywork == NULL ){
@@ -541,6 +550,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         {
             mywork->stgs->maxit = (idxint)(*mxGetPr(opts_maxit));
         }
+        if(opts_centrality != NULL)
+        {
+            mywork->stgs->centrality = (pfloat)(*mxGetPr(opts_centrality));
+        }
+ 
     }
       
     /* Solve! */    
