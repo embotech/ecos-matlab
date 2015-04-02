@@ -50,7 +50,7 @@ if( nargin == 3 )
         
         switch( LINSOLVER )
             
-            case 'backslash'
+            case {'backslash','cholesky2'}
                 Vk_pattern = ones(dims.q(i));
                 
             case 'rank1updates'
@@ -130,6 +130,7 @@ if( nargin == 5 )
         w = q'*q;
         a = wbar(1);
         b = 1/(1+a);
+        %b = 1+a;
         c = 1 + a + w / (1+a);
         d = 1 + 2/(1+a) + w/(1+a)^2;
         atilde = a^2 + w;
@@ -150,8 +151,10 @@ if( nargin == 5 )
         scaling.q(k).V = scaling.q(k).W*scaling.q(k).W;
         
         % now build different scalings depending on linear solver chosen
-        switch( LINSOLVER )
+        switch( LINSOLVER )                
             
+            case 'cholesky2'
+                %just something so there's no error
             case 'backslash'
                 Vk = scaling.q(k).V + EPS*eye(conesize);
                 Vk_noreg = scaling.q(k).V;
@@ -205,9 +208,11 @@ if( nargin == 5 )
                 D = blkdiag(d1,eye(conesize-1));
                 u = [u0; u1*q];
                 v = [v0; v1*q];
-%                 S = [ones(conesize,1); 1; -1];
-                Vk = eta^2*[D, v, u; v', +1, 0; u', 0, -1];% + EPS*diag(S);
-                Vk_noreg = Vk;%eta^2*(D + u*u' - v*v');
+                 S = [ones(conesize,1); 1; -1];                
+%                 Vk = eta^2*[D, v, u; v', +1, 0; u', 0, -1]; % + EPS*diag(S);
+%                 Vk_noreg = Vk;% - EPS*diag(S);%eta^2*(D + u*u' - v*v');
+                Vk = eta^2*[D, v, u; v', +1, 0; u', 0, -1] + EPS*diag(S);
+                Vk_noreg = Vk - EPS*diag(S);%eta^2*(D + u*u' - v*v');
 %                 norm(Vk_noreg - scaling.q(k).V)
 %                 if(any(eig(D-v*v') <= 0) )
 %                     keyboard
@@ -223,8 +228,10 @@ if( nargin == 5 )
         
         
         % put into scaling matrix
+        if ~strcmp(LINSOLVER,'cholesky2')
         V = blkdiag(V, Vk);
         V_noreg = blkdiag(V_noreg, Vk_noreg);
+        end
         
         
       
@@ -234,10 +241,12 @@ if( nargin == 5 )
     % calculate scaled points
     lambda = conelp_timesW(scaling,z,dims,LINSOLVER); % = W*z
     
+    
     %% output
     if( nargout >= 1 ), varargout{1} = scaling; end
     if( nargout >= 2 ), varargout{2} = lambda;  end
     if( nargout >= 3 ), varargout{3} = V;       end
     if( nargout >= 4 ), varargout{4} = V_noreg; end
+   
 end
 

@@ -19,7 +19,7 @@ for k = 1:length(dims.q)
     % multiplication
     switch( LINSOLVER )
         
-        case 'backslash'
+        case {'backslash','cholesky2'}
             lambda(coneidx,1) = scaling.q(k).V*zk;
         
         case 'rank1updates'

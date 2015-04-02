@@ -75,7 +75,7 @@ tic;
 %% Parameters
 MAXIT = 30;           % maximum number of iterations
 GAMMA = 0.985;        % scaling the final step length
-EPS = 5e-9;           % regularization parameter
+EPS = 1e-7;           % regularization parameter
 NITREF = 3;           % number of iterative refinement steps
 FEASTOL = 5e-6;       % primal infeasibility tolerance
 ABSTOL  = 5e-7;       % absolute tolerance on duality gap
@@ -97,10 +97,12 @@ CONELP_FATAL    = -7; % Unknown problem in solver
 % 'backslash' (MATLAB)  
 % 'ldlsparse' (sparse LDL by Tim Davis)
 % 'rank1updates' (sparse LDL by Tim Davis + rank1updates)
-% 'cholesky' (normal equations form + cholesky factorization)
+% 'cholesky' (normal equations form + cholesky factorization with sparse expansion of W)
+% 'cholesky2' (normal equations form + cholesky factorization)
+% 'cholesky3'
 
 if( ~exist('LINSOLVER','var') )  
-    LINSOLVER = 'cholesky';
+    LINSOLVER = 'backslash';
 end                                                              
                                                                     
                                
@@ -147,8 +149,12 @@ end
 % init variables
 [P,x,y,s,z,tau,kap] = conelp_init(c,G,Gtilde,h,dims,A,b,LINSOLVER,EPS,NITREF,LINSYSACC);
 
+
 % scaling
-[scaling,lambda,Vreg,Vtrue] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
+switch( LINSOLVER )
+    case {'cholesky2','cholesky3'}, [scaling,lambda] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
+    otherwise, [scaling,lambda,Vreg,Vtrue] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
+end
 
 % other variables
 alphaaff = 0; alpha = 0;
@@ -253,38 +259,53 @@ for nIt = 0:MAXIT+1
     
     %% 2. Affine search direction.
     
-    if strcmp(LINSOLVER,'cholesky')
-        % Normal equation and cholesky factorization
-        L = conelp_factor_chol(A,Gtilde,Vtrue,EPS);
+    switch( LINSOLVER )
         
-        % first solve for x1 y1 z1
-        [x1,y1,z1,info.nitref1] = conelp_solve_chol(L,-c,b,h,A,Gtilde,Vtrue,dims,NITREF,LINSYSACC,EPS);
-        assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
-        assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
-        assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+        case 'cholesky'
+            % Normal equations and cholesky factorization
+            L = conelp_factor_chol(A,Gtilde,Vreg,EPS);
         
-        %second solver for x2 y2 z2
-        bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;
-        [x2,y2,z2,info.nitref2] = conelp_solve_chol(L,bx,by,bz,A,Gtilde,Vtrue,dims,NITREF,LINSYSACC,EPS);
+            % first solve for x1 y1 z1
+            [x1,y1,z1,info.nitref1] = conelp_solve_chol(L,-c,b,h,A,Gtilde,Vreg,Vtrue,dims,NITREF,LINSYSACC,EPS);
+            assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
+            assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
+            assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+        
+            %second solver for x2 y2 z2
+            bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;
+            [x2,y2,z2,info.nitref2] = conelp_solve_chol(L,bx,by,bz,A,Gtilde,Vreg,Vtrue,dims,NITREF,LINSYSACC,EPS);
     
-    else
-        % build KKT matrix 
-        K = conelp_KKTmatrix(A, Gtilde, Vreg, EPS);
+        case 'cholesky2'
+            [L,Winv] = lino_factor_slow(A,G,scaling,dims,EPS);
+            
+            % first solve for x1 y1 z1
+            [x1,y1,z1,info.nitref1] = lino_kkt_slow(L,-c,b,h,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
+            assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
+            assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+        
+            %second solver for x2 y2 z2
+            bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;
+            [x2,y2,z2,info.nitref2] = lino_kkt_slow(L,bx,by,bz,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            
+        otherwise
+            % build KKT matrix 
+            K = conelp_KKTmatrix(A, Gtilde, Vreg, EPS);
   
-        % factor KKT matrix
-        [L,D,PL,QL,P] = conelp_factor(K,P,LINSOLVER,n,p,dims,scaling, c,b,h,kap,tau);    
-        assert( all( ~isnan(L(:)) ), 'Factorization returned NaN');
-        assert( all( ~isnan(D(:)) ), 'Factorization returned NaN');
+            % factor KKT matrix
+            [L,D,PL,QL,P] = conelp_factor(K,P,LINSOLVER,n,p,dims,scaling, c,b,h,kap,tau);    
+            assert( all( ~isnan(L(:)) ), 'Factorization returned NaN');
+            assert( all( ~isnan(D(:)) ), 'Factorization returned NaN');
     
-        % first solve for x1 y1 z1
-        [x1,y1,z1,info.nitref1] = conelp_solve(L,D,P,PL,QL, -c,b,h, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
-        assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
-        assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
-        assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
+            % first solve for x1 y1 z1
+            [x1,y1,z1,info.nitref1] = conelp_solve(L,D,P,PL,QL, -c,b,h, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
+            assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
+            assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
+            assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
         
-        % second solve for x2 y2 z2
-        bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;            
-        [x2,y2,z2,info.nitref2] = conelp_solve(L,D,P,PL,QL, bx,by,bz, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
+            % second solve for x2 y2 z2
+            bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;            
+            [x2,y2,z2,info.nitref2] = conelp_solve(L,D,P,PL,QL, bx,by,bz, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
     end
     
     if( p > 0 ), by1 = b'*y1; else by1 = 0; end    
@@ -325,9 +346,12 @@ for nIt = 0:MAXIT+1
     lambda_raute_bs = conelp_raute(lambda,bs,dims);    
     W_times_lambda_raute_bs = conelp_timesW(scaling,lambda_raute_bs,dims,LINSOLVER);
     
-    if strcmp(LINSOLVER,'cholesky')
-        [x2, y2, z2,info.nitref3] = conelp_solve_chol(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,Gtilde,Vtrue,dims,NITREF,LINSYSACC,EPS);
-    else
+    switch( LINSOLVER )
+        case 'cholesky' 
+            [x2, y2, z2,info.nitref3] = conelp_solve_chol(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,Gtilde,Vreg,Vtrue,dims,NITREF,LINSYSACC,EPS);
+        case 'cholesky2'
+            [x2, y2, z2,info.nitref3] = lino_kkt_slow(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+        otherwise
         [x2, y2, z2,info.nitref3] = conelp_solve(L,D,P,PL,QL, (1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz + W_times_lambda_raute_bs, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
     end
     
@@ -353,7 +377,11 @@ for nIt = 0:MAXIT+1
     kap = kap + alpha*dkap;     tau = tau + alpha*dtau;
     assert( tau > 0, 'tau <= 0, exiting.');
     assert( kap > 0, 'kappa <= 0, exiting');
-    [scaling,lambda,Vreg,Vtrue] = conelp_scaling(s,z,dims,LINSOLVER,EPS);    
+    if strcmp(LINSOLVER,'cholesky2')
+        [scaling,lambda] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
+    else
+        [scaling,lambda,Vreg,Vtrue] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
+    end
 end
 
 %% scale variables back

@@ -28,6 +28,8 @@ Kinit = conelp_KKTmatrix(A,Gtilde,Vinit,EPS);
 % [Linit,Dinit] = conelp_factor(Kinit,P);
 if strcmp(LINSOLVER,'cholesky')
     L = conelp_factor_chol(A,Gtilde,Vinit,EPS);
+elseif strcmp(LINSOLVER,'cholesky2')
+    [L,Winv] = lino_factor_slow(A,G,Vinit,EPS);
 else
     [Linit,Dinit,~,~,P] = conelp_factor(Kinit,P,LINSOLVER,n,p,dims);
 end
@@ -48,7 +50,9 @@ end
 % xhat = v(1:n);
 % r = -v(n+p+1:end);
 if strcmp(LINSOLVER,'cholesky')
-    [xhat, ~, minus_r] = conelp_solve_chol(L,zeros(n,1),b,h,A,Gtilde,Vinit,dims,NITREF,LINSYSACC,EPS);
+    [xhat, ~, minus_r] = conelp_solve_chol(L,zeros(n,1),b,h,A,Gtilde,Vinit,Vinit,dims,NITREF,LINSYSACC,EPS);
+elseif strcmp(LINSOLVER,'cholesky2')
+    [xhat, ~, minus_r] = lino_kkt_slow(L,zeros(n,1),b,h,A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);    
 else
     [xhat, ~, minus_r] = conelp_solve(Linit,Dinit,P,[],[], zeros(n,1),b,h, A,G,Vinit, dims, NITREF,LINSOLVER, LINSYSACC);
 end
@@ -69,7 +73,9 @@ shat = bring2cone(-minus_r,dims);
 %yhat = v(n+1:n+p);
 %zbar = v(n+p+1:end);
 if strcmp(LINSOLVER,'cholesky')
-    [~, yhat, zbar] = conelp_solve_chol(L,-c,zeros(p,1),zeros(m,1),A,Gtilde,Vinit,dims,NITREF,LINSYSACC,EPS);
+    [~, yhat, zbar] = conelp_solve_chol(L,-c,zeros(p,1),zeros(m,1),A,Gtilde,Vinit,Vinit,dims,NITREF,LINSYSACC,EPS);
+elseif strcmp(LINSOLVER,'cholesky2')
+    [~, yhat, zbar] = lino_kkt_slow(L,-c,zeros(p,1),zeros(m,1),A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);
 else
     [~, yhat, zbar] = conelp_solve(Linit,Dinit,P,[],[], -c,zeros(p,1),zeros(m,1), A,G,Vinit, dims, NITREF,LINSOLVER,LINSYSACC);
 end
