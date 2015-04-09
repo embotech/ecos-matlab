@@ -1,32 +1,81 @@
 %Generate random data for KKT-System
 
+DELTA = 1e-7; % how much in the cone are s and z (or how regular is W)
+condA = 100; % 0 if no specific condition number of A desired
+condG = 100; % 0 if no specific condition number of G desired
+
+if (condA<0 || condA>0 && condA<1)
+    error('no valid condition number for A')
+end
+if (condG<0 || condG>0 && condG<1)
+    error('no valid condition number for G')
+end
+
 %Maximal dimensions
-maxEq = 100;
-maxStates = 1000;
-maxConeDim = 100;
+maxEq = 10;
+maxStates = 100;
+maxConeDim = 50;
 
 %random dimensions
-n = randi(maxEq);
-m = randi(maxStates)+(n-1);
-k = randi(maxConeDim);
+if condA~=0 %assure that A is not a vector or a scalar
+    n = randi(maxEq)+1;
+else
+    n = randi(maxEq);
+end
+m = randi(maxStates)+(n-1); %m >= n
+if condG~=0 %assert that G is not a vector or a scalar
+    k = randi(maxConeDim)+m-n;
+else
+    k = randi(maxConeDim)+m-n-1; %n+k >= m
+end
+
+if k == 0;
+    k = 1;
+end
 
 %random A and G
 A = rand(n,m)*200-100; %random A with values [-100,100]
 G = rand(k,m)*200-100; %random G with values [-100,100]
 
-%random s and z with s(0), z(0) [0,100]
+%A and G with specific condition-number
+if condA~=0
+    [UA,SA,VA] = svd(A);
+    SA_new = zeros(n,m);
+    SA_new(1,1) = condA; %max singular-value A
+    SA_new(2,2) = 1; %min singular value A
+    for o=3:n
+        SA_new(o,o) = rand*(condA-1)+1;
+    end
+    A = UA*SA_new*VA';
+end
+if condG~=0
+    [UG,SG,VG] = svd(G);
+    SG_new = zeros(k,m);
+    SG_new(1,1) = condG; %max singular-value G
+    SG_new(2,2) = 1; %min singular value G
+    if k<=m
+        l = k;
+    else
+        l = m;
+    end
+    for o=3:l
+        SG_new(o,o) = rand*(condG-1)+1;
+    end
+    G = UG*SG_new*VG';
+end
+
+%random s and z with s(2:end), z(2:end) [0,10]
 s = zeros(k,1);
 z = zeros(k,1);
 
-s(1) = rand*100;
-z(1) = rand*100;
+s(2:end) = rand(k-1,1)*10;
+z(2:end) = rand(k-1,1)*10;
 
-for i=2:k
-    s(i) = 2*rand*s(1)/(k-1)-(s(1)/(k-1));
-    z(i) = 2*rand*z(1)/(k-1)-(z(1)/(k-1));
-end
-assert(s(1)-norm(s(2:k)) >= 0,'s not in SOCP');
-assert(z(1)-norm(z(2:k)) >= 0,'z not in SOCP');
+s(1) = norm(s(2:end)) + DELTA;
+z(1) = norm(z(2:end)) + DELTA;
+
+assert(s(1)-norm(s(2:k)) >= 0,'s not in SOC');
+assert(z(1)-norm(z(2:k)) >= 0,'z not in SOC');
 
 %RHS with random values [-100,100]
 bx = rand(m,1)*200-100;

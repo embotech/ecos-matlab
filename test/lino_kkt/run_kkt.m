@@ -1,15 +1,19 @@
 %Run KKT-solvers
-% clear
-run('data.m')
-[x,y,z,x_backslash,t_ne,t_backslash] = lino_kkt(A,G,s,z,bx,by,bz);
-x_ne = [x;y;z];
-%t_ne
-%t_backslash
-DELTA = 1e-5;
-n_errors = 0;
-for i=1:size(x_ne,1)
-    if (x_ne(i)/x_backslash(i)<=1-DELTA) || (x_ne(i)/x_backslash(i)>=1+DELTA)
-        n_errors = n_errors + 1;
-    end
+N = 100;
+res_ne_fastWinv_max = zeros(N,1);
+res_ne_matlabWinv_max = zeros(N,1);
+res_backslash_max = zeros(N,1);
+res_ldlsparse_max = zeros(N,1);
+for ntest=1:N
+    run('data.m')
+    [res_ne_fastWinv,res_ne_matlabWinv,res_backslash,res_ldlsparse,t_ne,t_backslash] = lino_kkt(A,G,s,z,bx,by,bz);
+    res_ne_fastWinv_max(ntest) = norm(res_ne_fastWinv,Inf);
+    res_ne_matlabWinv_max(ntest) = norm(res_ne_matlabWinv,Inf);
+    res_backslash_max(ntest) = norm(res_backslash,Inf);
+    res_ldlsparse_max(ntest) = norm(res_ldlsparse,Inf);
 end
-n_errors
+
+boxplot([res_ne_fastWinv_max,res_ne_matlabWinv_max,res_backslash_max,res_ldlsparse_max],'labels',{'Normal equations fast Winv','Normal equations matlab Winv','Backslash','ldlsparse'})
+title('Solver accuracy')
+xlabel('Solver')
+ylabel('Residuals')
