@@ -1,10 +1,6 @@
 function[A,G,s,z,dims,bx,by,bz] = data_kkt(nEqConstr,nStates,nLP_SOC_Constr,condA,condG,DELTA)
 %Generate random data for KKT-System
 
-% DELTA = 1e-14; % how much in the cone are s and z (or how regular is W)
-% condA = 50; % 0 if no specific condition number of A desired
-% condG = 50; % 0 if no specific condition number of G desired
-
 if (condA<0 || condA>0 && condA<1)
     error('no valid condition number for A')
 end

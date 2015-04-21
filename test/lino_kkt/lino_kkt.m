@@ -1,4 +1,4 @@
-function [res_ne_fastWinv,res_ne_matlabWinv,res_backslash,res_ldlsparse,t_ne,t_backslash] = lino_kkt(A,G,s,z,dims,bx,by,bz,EPS)
+function [res_ne_fastWinv,res_ne_matlabWinv,res_ne_cholmod,res_backslash,res_ldlsparse,t_ne,t_backslash] = lino_kkt(A,G,s,z,dims,bx,by,bz,EPS)
 %Solve KKT-System using normal equations
 
 EPS2 = 0; %Regularization on backslash-solver
@@ -89,20 +89,24 @@ for i=1:length(dims.q)
     W = blkdiag(W,scaling.q(i).W);
 end
 
-for p=1:2 %p=1: fast Winv, p==2: matlab Winv
-    if p==1
+for p=1:3 %p=1: fast Winv, p==2: matlab Winv
+    if p~=2
         WinvG = WinvG;
     else
         WinvG = W\G;
     end
     %Factor LHS
-    Y = WinvG'*WinvG + EPS*I_k;
-    L_one = chol(Y,'lower');
-    %Z = L_one\A'; L_one*Z = A'
+    if p==3
+        L_one = fastChol_kkt(G,dims,scaling,EPS);
+    else
+        Y = WinvG'*WinvG + EPS*I_k;
+        L_one = chol(Y,'lower');
+        %Z = L_one\A'; L_one*Z = A'
+    end
     Z = L_one\A';
     M = Z'*Z + I_p*EPS;
     L = chol(M,'lower');
-    if p==1
+    if p~=2
         Winvbz = fastWinv_kkt(bz,scaling,dims);%1/eta*[wbar(1)*bz(1)-zeta; bz(2:end)+(-bz(1)+zeta/(1+wbar(1)))*wbar(2:end)];
         GtWinv2bz = WinvG'*Winvbz;
     else
@@ -121,7 +125,7 @@ for p=1:2 %p=1: fast Winv, p==2: matlab Winv
     dx = conelp_backwardsub(L_one',dx_temp);
     %dz = W^(-2)*(G*dx-bz) = Winv*(Winv*G*dx-Winv*bz);
     dz_temp = WinvG*dx-Winvbz;
-    if p==1
+    if p~=2
         dz = fastWinv_kkt(dz_temp,scaling,dims);%1/eta*[wbar(1)*dz_temp(1)-zeta; dz_temp(2:end)+(-dz_temp(1)+zeta/(1+wbar(1)))*wbar(2:end)];
     else
         dz = W\dz_temp;
@@ -144,7 +148,7 @@ for p=1:2 %p=1: fast Winv, p==2: matlab Winv
         % solve for correction
 
         %RHS_error_ne
-        if p==1
+        if p~=2
             Winvez = fastWinv_kkt(ez,scaling,dims); %1/eta*[wbar(1)*ez(1)-zeta; ez(2:end)+(-ez(1)+zeta/(1+wbar(1)))*wbar(2:end)];
             GtWinv2ez = WinvG'*Winvez;
         else
@@ -160,7 +164,7 @@ for p=1:2 %p=1: fast Winv, p==2: matlab Winv
         ddx_temp = conelp_forwardsub(L_one,ex+GtWinv2ez-A'*ddy);
         ddx = conelp_backwardsub(L_one',ddx_temp);
         ddz_temp = WinvG*ddx-Winvez;
-        if p==1
+        if p~=2
             ddz = fastWinv_kkt(ddz_temp,scaling,dims); %1/eta*[wbar(1)*ddz_temp(1)-zeta; ddz_temp(2:end)+(-ddz_temp(1)+zeta/(1+wbar(1)))*wbar(2:end)];
         else
             ddz = W\ddz_temp;
@@ -172,8 +176,10 @@ for p=1:2 %p=1: fast Winv, p==2: matlab Winv
     end
     if p==1
         x_ne_fastWinv= [dx;dy;dz];
-    else
+    elseif p==2
         x_ne_matlabWinv = [dx;dy;dz];
+    elseif p==3
+        x_ne_cholmod = [dx;dy;dz];
     end
 end
 
@@ -198,6 +204,7 @@ x_ldlsparse = [x;y;z];
 %Return residuals
 res_ne_fastWinv = K*x_ne_fastWinv-RHS;
 res_ne_matlabWinv = K*x_ne_matlabWinv-RHS;
+res_ne_cholmod = K*x_ne_cholmod-RHS;
 res_backslash = K*x_backslash-RHS;
 res_ldlsparse = K*x_ldlsparse-RHS;
 
