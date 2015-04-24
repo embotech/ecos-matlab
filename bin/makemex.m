@@ -108,7 +108,7 @@ end
 %% ecos_mex
 if( any(strcmpi(what,'ecosmex')) || any(strcmpi(what,'all')) )
     fprintf('Compiling ecos_mex...');
-    cmd = sprintf('mex -c -O -DMATLAB_MEX_FILE -DCTRLC=1 -DMEXARGMUENTCHECKS %s -I../ecos/include -I../ecos/external/SuiteSparse_config -I../ecos/external/ldl/include -I../ecos/external/amd/include src/ecos_mex.c', d);
+    cmd = sprintf('mex -c -O -DMATLAB_MEX_FILE -DCTRLC=1 -DMEXARGMUENTCHECKS %s -I../ecos/include -I../ecos/external/SuiteSparse_config -I../ecos/external/ldl/include -I../ecos/external/amd/include ../src/ecos_mex.c', d);
     eval(cmd);
     fprintf('\t\t\t[done]\n');
     fprintf('Linking...     ');
