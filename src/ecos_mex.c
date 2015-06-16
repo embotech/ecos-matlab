@@ -499,8 +499,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
             if(opts_mi_integer_tol != NULL ){ opts_ecos_bb.integer_tol = (pfloat)(*mxGetPr(opts_mi_integer_tol));}
         }
 
-        bb_pwork = ECOS_BB_setup(n, m, p, l, ncones, qint, Gpr, Gjc, Gir, Apr, Ajc, Air, 
-            cpr, hpr, bpr, num_bool_vars, bool_vars_idx, num_int_vars, int_vars_idx, &opts_ecos_bb);
+        bb_pwork = ECOS_BB_setup(n, m, p, l, ncones, qint, nexc, Gpr, Gjc, Gir, Apr, Ajc, Air,
+				cpr, hpr, bpr, num_bool_vars, bool_vars_idx, num_int_vars, int_vars_idx, &opts_ecos_bb);
         
         mywork = bb_pwork->ecos_prob;
         
