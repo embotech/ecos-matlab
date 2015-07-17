@@ -241,10 +241,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       }
             
       /* Catch the expcone options*/
+#ifdef EXPCONE      
       opts_centrality = opts ? mxGetField(opts, 0, "CENTRALITY") : 0;
       if( !opts_centrality ){
         opts_centrality = opts ? mxGetField(opts,0,"centrality") : 0;
       } 
+#endif
  
       /* Catch ECOS BB options */
       opts_mi_verbose = opts ? mxGetField(opts, 0, "MI_VERBOSE") : NULL;
@@ -550,10 +552,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         {
             mywork->stgs->maxit = (idxint)(*mxGetPr(opts_maxit));
         }
+#ifdef EXPCONE
         if(opts_centrality != NULL)
         {
             mywork->stgs->centrality = (pfloat)(*mxGetPr(opts_centrality));
         }
+#endif
  
     }
       
