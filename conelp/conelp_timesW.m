@@ -19,10 +19,10 @@ for k = 1:length(dims.q)
     % multiplication
     switch( LINSOLVER )
         
-        case {'backslash','cholesky2'}
+        case {'backslash'}
             lambda(coneidx,1) = scaling.q(k).W*zk;
         
-        case {'rank1updates', 'ldlsparse', 'cholesky'}
+        case {'rank1updates', 'ldlsparse', 'cholesky','cholesky2'}
             a = scaling.q(k).a;
             zk1 = zk(2:end);
             zeta = scaling.q(k).q' * zk1;

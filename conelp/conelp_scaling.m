@@ -153,9 +153,7 @@ if( nargin == 5 )
         % now build different scalings depending on linear solver chosen
         switch( LINSOLVER )                
             
-            case 'cholesky2'
-                %just something so there's no error
-            case 'backslash'
+            case {'backslash','cholesky2'}
                 Vk = scaling.q(k).V + EPS*eye(conesize);
                 Vk_noreg = scaling.q(k).V;
                            

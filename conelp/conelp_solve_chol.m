@@ -54,7 +54,7 @@ for i = 1:nItref
     dz = dz + ddz;   
 end
     
-   copy out variables
+   % copy out variables
     x = dx;
     y = dy;
     z = conelp_unstretch(dz,dims,Nstretch);

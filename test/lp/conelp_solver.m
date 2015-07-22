@@ -22,3 +22,7 @@ pb = x_codegen(5:5);
 x = x_codegen(6:7);
 c0d0 = x_codegen(8:8);
 ecos_optval = 1*info_.pcost;
+
+% sinit = ones(dims.l,1);
+% zinit = sinit;
+% [dx,dy,dz] = factor_solve_mex(A_,G_,sinit,zinit,dims.l,0,0,1e-9,zeros(size(A_,2),1),ones(size(A_,1),1),zeros(size(G_,1),1));

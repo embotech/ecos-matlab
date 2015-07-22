@@ -75,7 +75,7 @@ tic;
 %% Parameters
 MAXIT = 30;           % maximum number of iterations
 GAMMA = 0.985;        % scaling the final step length
-EPS = 1e-7;           % regularization parameter
+EPS = 5e-9;           % regularization parameter
 NITREF = 3;           % number of iterative refinement steps
 FEASTOL = 5e-6;       % primal infeasibility tolerance
 ABSTOL  = 5e-7;       % absolute tolerance on duality gap
@@ -99,12 +99,11 @@ CONELP_FATAL    = -7; % Unknown problem in solver
 % 'rank1updates' (sparse LDL by Tim Davis + rank1updates)
 % 'cholesky' (normal equations form + cholesky factorization with sparse expansion of W)
 % 'cholesky2' (normal equations form + cholesky factorization)
-% 'cholesky3'
 
 if( ~exist('LINSOLVER','var') )  
-    LINSOLVER = 'backslash';
+    LINSOLVER = 'cholesky2';
 end                                                              
-                                                                    
+
                                
 
 %% Input argument checking
@@ -130,6 +129,12 @@ assert( size(c,1) == n,'c dimension mismatch');
 assert( size(h,1) == m,'h and G dimension 1 mismatch' );
 assert( dims.l+sum(dims.q) == m,'Wrong dimension information in dims struct' );
 
+if(length(dims.q)==0)
+    dimsq = int64(0);
+else
+    dimsq = int64(dims.q);
+end
+
 %% 0. Init
 
 % init info struct
@@ -152,7 +157,7 @@ end
 
 % scaling
 switch( LINSOLVER )
-    case {'cholesky2','cholesky3'}, [scaling,lambda] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
+    case {'cholesky2'}, [scaling,lambda] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
     otherwise, [scaling,lambda,Vreg,Vtrue] = conelp_scaling(s,z,dims,LINSOLVER,EPS);
 end
 
@@ -276,17 +281,19 @@ for nIt = 0:MAXIT+1
             [x2,y2,z2,info.nitref2] = conelp_solve_chol(L,bx,by,bz,A,Gtilde,Vreg,Vtrue,dims,NITREF,LINSYSACC,EPS);
     
         case 'cholesky2'
-            [L,Winv] = lino_factor_slow(A,G,scaling,dims,EPS);
+            % [L,Winv] = lino_factor_slow(A,G,scaling,dims,EPS);
             
             % first solve for x1 y1 z1
-            [x1,y1,z1,info.nitref1] = lino_kkt_slow(L,-c,b,h,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            % [x1,y1,z1,info.nitref1] = lino_kkt_slow(L,-c,b,h,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            [x1,y1,z1,info.nitref1] = linokkt_mex(A,G,s,z,dims.l,length(dims.q),dimsq,EPS,-c,b,h);
             assert( all( ~isnan(x1) ), 'Linear solver returned NaN');
             assert( all( ~isnan(y1) ), 'Linear solver returned NaN');
             assert( all( ~isnan(z1) ), 'Linear solver returned NaN');
         
-            %second solver for x2 y2 z2
+            %second solve for x2 y2 z2
             bx = rx;  by = ry;  bz = -rz + s; dt = rt - kap;  bkap = kap*tau;
-            [x2,y2,z2,info.nitref2] = lino_kkt_slow(L,bx,by,bz,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            % [x2,y2,z2,info.nitref2] = lino_kkt_slow(L,bx,by,bz,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            [x2,y2,z2,info.nitref2] = linokkt_mex(A,G,s,z,dims.l,length(dims.q),dimsq,EPS,bx,by,bz);
             
         otherwise
             % build KKT matrix 
@@ -350,7 +357,8 @@ for nIt = 0:MAXIT+1
         case 'cholesky' 
             [x2, y2, z2,info.nitref3] = conelp_solve_chol(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,Gtilde,Vreg,Vtrue,dims,NITREF,LINSYSACC,EPS);
         case 'cholesky2'
-            [x2, y2, z2,info.nitref3] = lino_kkt_slow(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            % [x2, y2, z2,info.nitref3] = lino_kkt_slow(L,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs,A,G,scaling,dims,NITREF,LINSYSACC,EPS,Winv);
+            [x2,y2,z2,info.nitref3] = linokkt_mex(A,G,s,z,dims.l,length(dims.q),dimsq,EPS,(1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz+W_times_lambda_raute_bs);
         otherwise
         [x2, y2, z2,info.nitref3] = conelp_solve(L,D,P,PL,QL, (1-sigma)*rx,(1-sigma)*ry,-(1-sigma)*rz + W_times_lambda_raute_bs, A,G,Vtrue, dims, NITREF,LINSOLVER,LINSYSACC);
     end

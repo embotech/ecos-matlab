@@ -1,0 +1,87 @@
+#include "mex.h"
+#include "matrix.h"
+#include "lino_kkt.h"
+#include <stdio.h>
+
+/* The mex-function */
+void mexFunction(int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[]){
+    
+    if(nrhs == 8){
+        /* Get inputs */
+        mxArray* Amx = (mxArray*)prhs[0];
+        mxArray* Gmx = (mxArray*)prhs[1];
+        pfloat* s = (pfloat*)mxGetPr(prhs[2]);
+        pfloat* z = (pfloat*)mxGetPr(prhs[3]);
+        idxint nlp = (idxint)mxGetScalar(prhs[4]);
+        idxint nsoc = (idxint)mxGetScalar(prhs[5]);
+        idxint* socdims = mxGetData(prhs[6]);
+        pfloat delta = (pfloat)mxGetScalar(prhs[7]);
+        
+        spmat* A = createSparseMatrix((mwIndex)mxGetM(Amx),(mwIndex)mxGetN(Amx),(mwIndex)mxGetNzmax(Amx),(mwIndex*)mxGetJc(Amx),(mwIndex*)mxGetIr(Amx),(pfloat*)mxGetPr(Amx));
+        spmat* G = createSparseMatrix((mwIndex)mxGetM(Gmx),(mwIndex)mxGetN(Gmx),(mwIndex)mxGetNzmax(Gmx),(mwIndex*)mxGetJc(Gmx),(mwIndex*)mxGetIr(Gmx),(pfloat*)mxGetPr(Gmx));
+        
+        idxint i, j;
+        
+        mxArray *Lmx, *LMmx;
+        mwIndex *Ljc, *Lir, *LMjc, *LMir;
+        double *Lpr, *LMpr;
+        
+         /* Allocate memory for Cone */
+        cone* C = mxMalloc(sizeof(cone));
+        C->lpc = mxMalloc(sizeof(lpcone));
+        C->soc = mxMalloc(nsoc*sizeof(socone));
+        
+        /* mexPrintf("sizeof(C) = %i\nsizeof(lpc) = %i\nsizeof(soc) = %i\n",sizeof(*C),sizeof(C->lpc),nsoc*sizeof(C->soc)); */
+
+        for(i = 0; i < nsoc; i++){
+            C->soc[i].skbar = mxMalloc(socdims[i]*sizeof(pfloat));
+            C->soc[i].zkbar = mxMalloc(socdims[i]*sizeof(pfloat));
+            C->soc[i].q = mxMalloc((socdims[i]-1)*sizeof(pfloat));
+        }    
+        
+        C->lpc->w = mxMalloc(nlp*sizeof(pfloat));
+        C->lpc->v = mxMalloc(nlp*sizeof(pfloat));
+
+        C->nsoc = nsoc;
+        C->lpc->p = nlp;
+
+        for(i = 0; i < nsoc; i++){
+            C->soc[i].p = socdims[i];
+        }
+
+        pfloat lambda[G->m];        
+        if(updateScalings(C,s,z,lambda) == OUTSIDE_CONE){
+            mexErrMsgTxt("Outside cone!");
+        }
+        
+        /* Setup and factor */
+        
+        pfc* mypfc;
+        mypfc = neSetup(nlp,nsoc,socdims,G,A,bx,by,bz,delta);
+        NEfactor(mypfc,C);
+        
+        /* Free memory of cone */
+        mxFree(C->lpc->w);
+        mxFree(C->lpc->v);
+        mxFree(C->lpc);
+        mxFree(C);
+        
+         /* copy solution */
+                
+        Lmx = mxCreateSparse((mwSize)(G->n),(mwSize)(G->n),(mwSize)(G->n*G->n),mxREAL);
+        Lpr = mxGetPr(Lmx); 
+        Ljc = mxGetJc(Lmx); 
+        Lir = mxGetIr(Lmx);
+        
+        for(i = 0; i <= G->n; i++){
+            Ljc[i] = ((idxint*)mypfc->L->p)[i];
+
+        for(i = 0; i < djc[1]; i++){
+            Lpr[i] = ((pfloat*)mypfc->L->
+            dir[i] = i;
+        }  
+        if(nlhs > 0){
+            plhs[0] = dmx;
+        }
+        
+        neCleanup(mypfc,nsoc,nlp);

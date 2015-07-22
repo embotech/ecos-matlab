@@ -10,12 +10,29 @@ function [P,xhat,yhat,shat,zhat,kaphat,tauhat] = conelp_init(c,G,Gtilde,h,dims,A
 %
 % (c) Alexander Domahidi, IfA, ETH Zurich, 2012.
 
+if(length(dims.q)==0)
+    dimsq = int64(0);
+else
+    dimsq = int64(dims.q);
+end
+
 %% dimensions
 [mtilde, n] = size(Gtilde);
 m = dims.l + sum(dims.q);
 p = size(A,1);
 
-
+% s and z init for NE solve
+sinit = ones(dims.l,1);
+zinit = sinit;
+% unit vector of appropriate size
+for i=1:length(dims.q)
+    temp = 1;
+    for j=2:dims.q(i)
+        temp = [temp; 0];
+    end
+    sinit = [sinit;temp];
+    zinit = [zinit;temp];
+end
 %% compute permutation
 Vpattern = conelp_scaling(dims, LINSOLVER, 'pattern');
 Kpattern = conelp_KKTmatrix(A,Gtilde,Vpattern,0);
@@ -29,7 +46,7 @@ Kinit = conelp_KKTmatrix(A,Gtilde,Vinit,EPS);
 if strcmp(LINSOLVER,'cholesky')
     L = conelp_factor_chol(A,Gtilde,Vinit,EPS);
 elseif strcmp(LINSOLVER,'cholesky2')
-    [L,Winv] = lino_factor_slow(A,G,Vinit,EPS);
+    % [L,Winv] = lino_factor_slow(A,G,Vinit,EPS);
 else
     [Linit,Dinit,~,~,P] = conelp_factor(Kinit,P,LINSOLVER,n,p,dims);
 end
@@ -52,7 +69,8 @@ end
 if strcmp(LINSOLVER,'cholesky')
     [xhat, ~, minus_r] = conelp_solve_chol(L,zeros(n,1),b,h,A,Gtilde,Vinit,Vinit,dims,NITREF,LINSYSACC,EPS);
 elseif strcmp(LINSOLVER,'cholesky2')
-    [xhat, ~, minus_r] = lino_kkt_slow(L,zeros(n,1),b,h,A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);    
+    % [xhat, ~, minus_r] = lino_kkt_slow(L,zeros(n,1),b,h,A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);
+    [xhat,~,minus_r] = linokkt_mex(A,G,sinit,zinit,dims.l,length(dims.q),dimsq,EPS,zeros(n,1),b,h);
 else
     [xhat, ~, minus_r] = conelp_solve(Linit,Dinit,P,[],[], zeros(n,1),b,h, A,G,Vinit, dims, NITREF,LINSOLVER, LINSYSACC);
 end
@@ -75,7 +93,8 @@ shat = bring2cone(-minus_r,dims);
 if strcmp(LINSOLVER,'cholesky')
     [~, yhat, zbar] = conelp_solve_chol(L,-c,zeros(p,1),zeros(m,1),A,Gtilde,Vinit,Vinit,dims,NITREF,LINSYSACC,EPS);
 elseif strcmp(LINSOLVER,'cholesky2')
-    [~, yhat, zbar] = lino_kkt_slow(L,-c,zeros(p,1),zeros(m,1),A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);
+    % [~, yhat, zbar] = lino_kkt_slow(L,-c,zeros(p,1),zeros(m,1),A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);
+    [~,yhat,zbar] = linokkt_mex(A,G,sinit,zinit,dims.l,length(dims.q),dimsq,EPS,-c,zeros(p,1),zeros(m,1));
 else
     [~, yhat, zbar] = conelp_solve(Linit,Dinit,P,[],[], -c,zeros(p,1),zeros(m,1), A,G,Vinit, dims, NITREF,LINSOLVER,LINSYSACC);
 end
@@ -108,6 +127,5 @@ for k = 1:length(dims.q)
         alpha = max([alpha,-res]);
     end
 end
-
 shat = r + (1+alpha)*conelp_e(dims);
 end
