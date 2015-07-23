@@ -11,7 +11,7 @@ function [x,y,info,s,z] = conelp(c,G,h,dims,A,b,LINSOLVER)
 %                    s >= 0
 %
 %        maximize    -h'*z - b'*y
-%        subject to  G'*z + A'*y + c = 0
+%        subject to  G'*z + A'*y + c = 0c
 %                    z >= 0.
 %
 %    The inequalities are with respect to a cone C defined as the Cartesian
@@ -75,7 +75,7 @@ tic;
 %% Parameters
 MAXIT = 30;           % maximum number of iterations
 GAMMA = 0.985;        % scaling the final step length
-EPS = 5e-9;           % regularization parameter
+EPS = 5e-8;           % regularization parameter
 NITREF = 3;           % number of iterative refinement steps
 FEASTOL = 5e-6;       % primal infeasibility tolerance
 ABSTOL  = 5e-7;       % absolute tolerance on duality gap
@@ -101,7 +101,7 @@ CONELP_FATAL    = -7; % Unknown problem in solver
 % 'cholesky2' (normal equations form + cholesky factorization)
 
 if( ~exist('LINSOLVER','var') )  
-    LINSOLVER = 'cholesky2';
+    LINSOLVER = 'ldlsparse';
 end                                                              
 
                                

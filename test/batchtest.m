@@ -30,7 +30,7 @@ for dd = 1:length(dirs)
         temp = strfind(datdef{1}(kt),'rand');
         if( ~isempty(temp{1}) )
             fprintf('on randomized data ');
-            N = 1e4;
+            N = 1e2;
             break;
         end
     end
@@ -39,7 +39,7 @@ for dd = 1:length(dirs)
     
     delStr = '';
     for i = 1:N
-        data; evalc('ecos_solver');
+        data; evalc('conelp_solver');
         exitflags(k,i) = info_.exitflag;
         
         bar = repmat(sprintf('='),1,round(i/N*30));

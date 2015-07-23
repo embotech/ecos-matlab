@@ -96,7 +96,7 @@ elseif strcmp(LINSOLVER,'cholesky2')
     % [~, yhat, zbar] = lino_kkt_slow(L,-c,zeros(p,1),zeros(m,1),A,G,Vinit,NITREF,LINSYSACC,EPS,Winv);
     [~,yhat,zbar] = linokkt_mex(A,G,sinit,zinit,dims.l,length(dims.q),dimsq,EPS,-c,zeros(p,1),zeros(m,1));
 else
-    [~, yhat, zbar] = conelp_solve(Linit,Dinit,P,[],[], -c,zeros(p,1),zeros(m,1), A,G,Vinit, dims, NITREF,LINSOLVER,LINSYSACC);
+    [~, yhat, zbar] = conelp_solve(Linit,Dinit,P,[],[], -c,zeros(p,1),zeros(m,1), A,G,Vinit, dims, NITREF,LINSOLVER,LINSYSACC)
 end
 zhat = bring2cone(zbar,dims);
 
