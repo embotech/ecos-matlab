@@ -22,6 +22,8 @@
 #include "ecos.h"
 #include "ecos_bb.h"
 
+
+
 /* THE mex-function */
 void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )  
 {  
@@ -127,17 +129,19 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     pfloat feastol;
     idxint maxit;
     
-    pfloat *Gpr = NULL;
-    idxint *Gjc = NULL;
-    idxint *Gir = NULL;
+    double *Gpr = NULL;
+    mwIndex *Gjc = NULL;
+    mwIndex *Gir = NULL;
+    mwSize nnzG;
    
-    pfloat *Apr = NULL;    
-    idxint *Ajc = NULL;
-    idxint *Air = NULL;   
+    double *Apr = NULL;    
+    mwIndex *Ajc = NULL;
+    mwIndex *Air = NULL;   
+    mwSize nnzA;
     
-    pfloat *cpr = NULL;
-    pfloat *hpr = NULL;
-    pfloat *bpr = NULL;
+    double *cpr = NULL;
+    double *hpr = NULL;
+    double *bpr = NULL;
     
     double *int_idx = NULL;
     double *bool_idx = NULL;
@@ -159,19 +163,41 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         mexErrMsgTxt("ECOS takes 4 to 7 arguments: ECOS(c,G,h,dims), ECOS(c,G,h,dims,opts), ECOS(c,G,h,dims,A,b), or ECOS(c,G,h,dims,A,b,opts)");
     }
 #endif    
-  
+
+    /* DEBUG for finding out the current bit sizes of mwIndex as opposed to idxint
+    mexPrintf("Size of mwIndex: %d\n", sizeof(mwIndex));
+    mexPrintf("Size of idxint: %d\n", sizeof(idxint));
+    mexErrMsgTxt("Stop here");
+    */
+
     /* get pointers to data */
-    c = prhs[0];      size_c = c ? mxGetDimensions(c) : (const mwSize *) &ZERO;
-    G = prhs[1];      size_G = G ? mxGetDimensions(G) : (const mwSize *) &ZERO;
-    h = prhs[2];      size_h = h ? mxGetDimensions(h) : (const mwSize *) &ZERO;
+    c = prhs[0];      
+    size_c = c ? mxGetDimensions(c) : (const mwSize *) &ZERO;
+    
+    G = prhs[1];      
+    size_G = G ? mxGetDimensions(G) : (const mwSize *) &ZERO;    
+    nnzG = G ? mxGetNzmax(G) : 0;
+    
+    h = prhs[2];      
+    size_h = h ? mxGetDimensions(h) : (const mwSize *) &ZERO;    
+    nnzA = A ? mxGetNzmax(A) : 0;
+    
     dims = prhs[3];    
     dims_l = dims ? mxGetField(dims, 0, "l") : NULL;
+    if( dims_l == -1 ) dims_l = 0;
+    
     dims_q = dims ? mxGetField(dims, 0, "q") : NULL; 
     size_q = dims_q ? mxGetDimensions(dims_q) : (const mwSize *) &ZERO;
+    
     dims_e = dims ? mxGetField(dims,0, "e") : NULL;
+    if( dims_e == -1 ) dims_e = 0;
+    
     if( nrhs >= 6 )
     {
-        A = prhs[4];  size_A = A ? mxGetDimensions(A) : (const mwSize *) &ZERO;
+        A = prhs[4];  
+        size_A = A ? mxGetDimensions(A) : (const mwSize *) &ZERO;
+        nnzA = A ? mxGetNzmax(A) : 0;
+        
         b = prhs[5];  size_b = b ? mxGetDimensions(b) : (const mwSize *) &ZERO;
     }
     if( nrhs == 5 || nrhs == 7 )
@@ -276,6 +302,8 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
       
     }
     
+   
+    
     /* determine sizes */
     n = (idxint)size_c[0];
     m = (idxint)size_G[0];
@@ -322,6 +350,12 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         }
     }
 
+    if( nnzG == 0 )
+    {
+        mexPrintf("nnzG[0]=%d\n", nnzG);
+        mexErrMsgTxt("G is all zeros");
+    }
+
     if( !mxIsStruct(dims) )
     {
         mexErrMsgTxt("Struct dims expected as 4th argument");
@@ -355,6 +389,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
         {
             mexErrMsgTxt("Fifth argument (A) needs to be a sparse matrix");
         } 
+        
+        if( nnzG == 0 )
+        {
+            mexErrMsgTxt("A is all zeros");
+        }
         
         if( size_b[0] != p )
         {
@@ -427,7 +466,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 #endif
 
     /* find out dimensions of cones */    
-    l = (idxint)(*mxGetPr(dims_l)); numConicVariables += l;
+    numConicVariables = 0;
+    if( dims_l != NULL ) {
+        l = (idxint)(*mxGetPr(dims_l)); 
+        numConicVariables += l;
+    }    
     if( dims_q != NULL) {
         q = mxGetPr(dims_q);
     } else {
@@ -441,21 +484,20 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
     nexc = dims_e ? (idxint)(*mxGetPr(dims_e)):0; numConicVariables += 3*nexc;
     /* get problem data in right format matrices */
     if( m > 0){
-        Gpr = (pfloat *)mxGetPr(G);
-        Gjc = (idxint *)mxGetJc(G);
-        Gir = (idxint *)mxGetIr(G);
-    } else { mexErrMsgTxt( "ECOS does not support equality constrained problems without inequalities yet." ); }
+        Gpr = mxGetPr(G);
+        Gjc = mxGetJc(G);
+        Gir = mxGetIr(G);
+    } else { mexErrMsgTxt( "ECOS does not support unconstrained optimization problems\n(no inequalities are defined in your problem)." ); }
     if( p > 0 ){
-        Apr = (pfloat *)mxGetPr(A);
-        Ajc = (idxint *)mxGetJc(A);
-        Air = (idxint *)mxGetIr(A);  
+        Apr = mxGetPr(A);
+        Ajc = mxGetJc(A);
+        Air = mxGetIr(A);  
     }    
-    cpr = (pfloat *)mxGetPr(c);
-    hpr = (pfloat *)mxGetPr(h);
+    cpr = mxGetPr(c);
+    hpr = mxGetPr(h);
     if ( p > 0 ) {
-      bpr = (pfloat *)mxGetPr(b);
+      bpr = mxGetPr(b);
     }
-   
     
     /* we have to copy the number of cones since Matlab gives us double
      * values but the C version of ECOS expects idxint values */
