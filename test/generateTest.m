@@ -34,7 +34,7 @@ txt = [txt; '/* print test name */'];
 txt = [txt; 'printf("',namestring,'\n");'];
 txt = [txt; ' '];
 txt = [txt; '/* set up data */'];
-txt = [txt; 'mywork = ECOS_setup(',prefix,'n, ',prefix,'m, ',prefix,'p, ',prefix,'l, ',prefix,'ncones, ',prefix,'q,'];
+txt = [txt; 'mywork = ECOS_setup(',prefix,'n, ',prefix,'m, ',prefix,'p, ',prefix,'l, ',prefix,'ncones, ',prefix,'q, ',prefix,'nexc,'];
 txt = [txt; '                    ',prefix,'Gpr, ',prefix,'Gjc, ',prefix,'Gir,'];
 txt = [txt; '                    ',prefix,'Apr, ',prefix,'Ajc, ',prefix,'Air,'];
 txt = [txt; '                    ',prefix,'c, ', prefix,'h, ',prefix,'b);'];

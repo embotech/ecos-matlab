@@ -82,7 +82,7 @@ if( any(strcmpi(what,'ecos')) || any(strcmpi(what,'all')) )
     fprintf('Compiling ecos...');
     i = sprintf('-I../ecos/include -I../ecos/external/SuiteSparse_config -I../ecos/external/ldl/include -I../ecos/external/amd/include');
     cmd = sprintf('mex -c -O %s -DMATLAB_MEX_FILE -DCTRLC=1 %s', d, i);
-    files = {'ecos', 'kkt', 'cone', 'spla', 'ctrlc', 'timer', 'preproc', 'splamm', 'equil', 'expcone', 'wright_omega'};
+    files = {'ecos', 'kkt', 'cone', 'spla', 'ctrlc', 'timer', 'preproc', 'splamm', 'equil', 'wright_omega', 'expcone'};
     for i = 1 : length (files)
         cmd = sprintf ('%s ../ecos/src/%s.c', cmd, files {i}) ;
     end
@@ -114,13 +114,13 @@ if( any(strcmpi(what,'ecosmex')) || any(strcmpi(what,'all')) )
     fprintf('Linking...     ');
     clear ecos
     if( ispc )
-        cmd = sprintf('mex %s -lut amd_1.obj amd_2.obj amd_aat.obj amd_control.obj amd_defaults.obj amd_dump.obj amd_global.obj amd_info.obj amd_order.obj amd_post_tree.obj amd_postorder.obj amd_preprocess.obj amd_valid.obj ldl.obj kkt.obj preproc.obj spla.obj cone.obj ecos.obj ctrlc.obj timer.obj splamm.obj equil.obj ecos_mex.obj ecos_bb.obj ecos_bb_preproc.obj -output "ecos"', d);
+        cmd = sprintf('mex %s -lut amd_1.obj amd_2.obj amd_aat.obj amd_control.obj amd_defaults.obj amd_dump.obj amd_global.obj amd_info.obj amd_order.obj amd_post_tree.obj amd_postorder.obj amd_preprocess.obj amd_valid.obj ldl.obj kkt.obj preproc.obj spla.obj cone.obj ecos.obj ctrlc.obj timer.obj splamm.obj equil.obj ecos_mex.obj ecos_bb.obj ecos_bb_preproc.obj wright_omega.obj expcone.obj -output "ecos"', d);
         eval(cmd);    
     elseif( ismac )
-        cmd = sprintf('mex %s -lut -lm amd_1.o   amd_2.o   amd_aat.o   amd_control.o   amd_defaults.o   amd_dump.o   amd_global.o   amd_info.o   amd_order.o   amd_post_tree.o   amd_postorder.o   amd_preprocess.o   amd_valid.o     ldl.o   kkt.o   preproc.o   spla.o   cone.o   ecos.o ctrlc.o timer.o   splamm.o   equil.o  ecos_mex.o ecos_bb.o ecos_bb_preproc.o -output "ecos"', d);
+        cmd = sprintf('mex %s -lut -lm amd_1.o   amd_2.o   amd_aat.o   amd_control.o   amd_defaults.o   amd_dump.o   amd_global.o   amd_info.o   amd_order.o   amd_post_tree.o   amd_postorder.o   amd_preprocess.o   amd_valid.o     ldl.o   kkt.o   preproc.o   spla.o   cone.o   ecos.o ctrlc.o timer.o   splamm.o   equil.o  ecos_mex.o ecos_bb.o ecos_bb_preproc.o wright_omega.o expcone.o -output "ecos"', d);
         eval(cmd);
     elseif( isunix )
-        cmd = sprintf('mex %s -lut -lm -lrt amd_1.o   amd_2.o   amd_aat.o   amd_control.o   amd_defaults.o   amd_dump.o   amd_global.o   amd_info.o   amd_order.o   amd_post_tree.o   amd_postorder.o  expcone.o wright_omega.o amd_preprocess.o   amd_valid.o     ldl.o   kkt.o   preproc.o   spla.o   cone.o   ecos.o ctrlc.o timer.o   splamm.o   equil.o  ecos_mex.o ecos_bb.o ecos_bb_preproc.o -output "ecos"', d);
+        cmd = sprintf('mex %s -lut -lm -lrt amd_1.o   amd_2.o   amd_aat.o   amd_control.o   amd_defaults.o   amd_dump.o   amd_global.o   amd_info.o   amd_order.o   amd_post_tree.o   amd_postorder.o   amd_preprocess.o   amd_valid.o     ldl.o   kkt.o   preproc.o   spla.o   cone.o   ecos.o ctrlc.o timer.o   splamm.o   equil.o  ecos_mex.o ecos_bb.o ecos_bb_preproc.o wright_omega.o expcone.o -output "ecos"', d);
         eval(cmd);
     end
     fprintf('\t\t\t\t[done]\n');
