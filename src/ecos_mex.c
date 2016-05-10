@@ -427,7 +427,11 @@ void mexFunction( int nlhs, mxArray *plhs[], int nrhs, const mxArray *prhs[] )
 #endif
 
     /* find out dimensions of cones */    
-    l = (idxint)(*mxGetPr(dims_l)); numConicVariables += l;
+    if( dims_l != NULL) {
+      l = (idxint)(*mxGetPr(dims_l)); numConicVariables += l;
+    } else {
+      l = 0;
+    }
     if( dims_q != NULL) {
         q = mxGetPr(dims_q);
     } else {
