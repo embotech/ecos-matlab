@@ -30,7 +30,7 @@ for dd = 1:length(dirs)
         temp = strfind(datdef{1}(kt),'rand');
         if( ~isempty(temp{1}) )
             fprintf('on randomized data ');
-            N = 1e4;
+            N = 1e3;
             break;
         end
     end
